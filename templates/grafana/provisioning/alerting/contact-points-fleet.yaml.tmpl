@@ -1,0 +1,28 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: telegram-fleet
+    receivers:
+      - uid: telegram-fleet-primary
+        type: telegram
+        disableResolveMessage: false
+        settings:
+          bottoken: ${TELEGRAM_FLEET_BOT_TOKEN}
+          chatid: "${TELEGRAM_FLEET_CHAT_ID}"
+          message: |
+            {{ if eq .Status "firing" }}[FIRING]{{ else }}[RESOLVED]{{ end }} *{{ .GroupLabels.alertname }}*
+
+            {{ range .Alerts }}
+            Status: {{ .Status }}
+            Severity: {{ .Labels.severity }}
+            Node: {{ .Labels.node }}
+            Summary: {{ .Annotations.summary }}
+            Description: {{ .Annotations.description }}
+            {{ if .Annotations.runbook }}Runbook: {{ .Annotations.runbook }}{{ end }}
+            Value: {{ .Values }}
+            Started: {{ .StartsAt }}
+            {{ end }}
+          parse_mode: ""
+          disable_notifications: false
+          disable_web_page_preview: true

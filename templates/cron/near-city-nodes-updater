@@ -1,0 +1,5 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=""
+ENV_FILE=/etc/near-city-nodes/node.env
+0 2,10,18 * * * root /opt/near-city-nodes/update-near.sh >> /var/log/near-city-nodes/cron.log 2>&1

@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: legion-fleet
+    orgId: 1
+    folder: Legion Fleet
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

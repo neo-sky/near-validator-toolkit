@@ -1,0 +1,315 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: ${OPERATOR_NAME}
+    folder: City Nodes
+    interval: 30s
+    rules:
+      - uid: ${OPERATOR_NAME}-node-down
+        title: Node Down
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: city-node-prometheus
+            model:
+              expr: 'up{job="neard"}'
+              instant: true
+              refId: A
+          - refId: B
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: lt, params: [1]}
+              refId: C
+        noDataState: Alerting
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: neard metrics endpoint unreachable
+          description: Prometheus cannot scrape neard /metrics. Container may be stopped or RPC unresponsive.
+          runbook: systemctl status neard-mainnet && docker ps && curl -s http://127.0.0.1:3030/status
+        labels:
+          severity: critical
+          component: neard
+          node: ${OPERATOR_NAME}
+        isPaused: false
+
+      - uid: ${OPERATOR_NAME}-sync-stalled
+        title: Sync Stalled
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: city-node-prometheus
+            model:
+              expr: 'increase(near_block_height_head[5m]) and near_sync_status == 0'
+              instant: true
+              refId: A
+          - refId: B
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: lt, params: [1]}
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: Block height not advancing
+          description: Node processed fewer than 1 block in the last 5 minutes while fully synced. Likely peer isolation.
+          runbook: Check peer count, inspect docker logs neard-mainnet | tail -100. Will not fire during initial state sync.
+        labels:
+          severity: critical
+          component: neard
+          node: ${OPERATOR_NAME}
+        isPaused: false
+
+      - uid: ${OPERATOR_NAME}-head-lag-high
+        title: Head Lag High
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: city-node-prometheus
+            model:
+              expr: 'near_head_lag_seconds and near_sync_status == 0'
+              instant: true
+              refId: A
+          - refId: B
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: gt, params: [30]}
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Head lag over 30 seconds
+          description: Fully-synced node is more than 30s behind wall clock. Drifting from chain head.
+          runbook: Check peer count, bandwidth, CPU saturation. Sustained lag risks kickout. Will not fire during initial state sync.
+        labels:
+          severity: warning
+          component: neard
+          node: ${OPERATOR_NAME}
+        isPaused: false
+
+      - uid: ${OPERATOR_NAME}-low-peers
+        title: Low Peer Count
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: city-node-prometheus
+            model:
+              expr: 'sum(near_peer_connections)'
+              instant: true
+              refId: A
+          - refId: B
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: lt, params: [10]}
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 3m
+        annotations:
+          summary: Peer count below 10
+          description: Too few p2p peers. Node is at risk of isolation and sync drift.
+          runbook: Check UFW 24567/tcp open, check outbound connectivity, inspect network.boot_nodes list in config.json.
+        labels:
+          severity: warning
+          component: neard
+          node: ${OPERATOR_NAME}
+        isPaused: false
+
+      - uid: ${OPERATOR_NAME}-memory-high
+        title: Host Memory Critical
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: city-node-prometheus
+            model:
+              expr: '100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)'
+              instant: true
+              refId: A
+          - refId: B
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: gt, params: [90]}
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: Host memory usage over 90 percent
+          description: Memory pressure on the box. OOM kill risk for neard container.
+          runbook: Check docker stats neard-mainnet, check for memory leaks, consider container memory limit adjustment.
+        labels:
+          severity: critical
+          component: host
+          node: ${OPERATOR_NAME}
+        isPaused: false
+
+      - uid: ${OPERATOR_NAME}-disk-high
+        title: Root Disk Above 85 Percent
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: city-node-prometheus
+            model:
+              expr: '100 * (1 - node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"})'
+              instant: true
+              refId: A
+          - refId: B
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: gt, params: [85]}
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: Root filesystem over 85 percent full
+          description: Disk usage trending high. Will impact neard if hits 100 percent.
+          runbook: du -sh /var/lib/neard /var/lib/prometheus /var/log, check gc_num_epochs_to_keep in config.json.
+        labels:
+          severity: warning
+          component: host
+          node: ${OPERATOR_NAME}
+        isPaused: false
+
+      - uid: ${OPERATOR_NAME}-disk-critical
+        title: Root Disk Above 95 Percent
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: city-node-prometheus
+            model:
+              expr: '100 * (1 - node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"})'
+              instant: true
+              refId: A
+          - refId: B
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            queryType: ""
+            relativeTimeRange: {from: 0, to: 0}
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: gt, params: [95]}
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: Root filesystem over 95 percent full
+          description: Imminent disk-full. neard will halt on write errors. Take immediate action.
+          runbook: Free space immediately. Consider emergency pruning or container stop.
+        labels:
+          severity: critical
+          component: host
+          node: ${OPERATOR_NAME}
+        isPaused: false

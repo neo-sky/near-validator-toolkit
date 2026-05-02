@@ -1,0 +1,15 @@
+.env
+.env.local
+.env.*.local
+*.bak
+*.bak.*
+nearcore/
+render/
+*.tar.gz
+
+.DS_Store
+*.swp
+.*.swp
+*.tmp
+.vscode/
+.idea/

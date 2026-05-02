@@ -1,0 +1,24 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    host: "${OPERATOR_NAME}"
+    network: "${NETWORK}"
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['127.0.0.1:9090']
+
+  - job_name: node
+    static_configs:
+      - targets: ['127.0.0.1:9100']
+
+  - job_name: neard
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['127.0.0.1:3030']
+        labels:
+          chain: "${NETWORK}"
+          role: chunk_validator
+          pool: "${POOL_ACCOUNT}"

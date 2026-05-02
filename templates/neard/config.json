@@ -1,0 +1,244 @@
+{
+  "max_loaded_contracts": 32,
+  "genesis_file": "genesis.json",
+  "genesis_records_file": null,
+  "validator_key_file": "validator_key.json",
+  "node_key_file": "node_key.json",
+  "rpc": {
+    "addr": "127.0.0.1:3030",
+    "prometheus_addr": null,
+    "cors_allowed_origins": [
+      "*"
+    ],
+    "polling_config": {
+      "polling_interval": {
+        "secs": 0,
+        "nanos": 200000000
+      },
+      "polling_timeout": {
+        "secs": 10,
+        "nanos": 0
+      }
+    },
+    "limits_config": {
+      "json_payload_max_size": 10485760
+    },
+    "enable_debug_rpc": true,
+    "experimental_debug_pages_src_path": null
+  },
+  "telemetry": {
+    "endpoints": [
+      "https://telemetry.nearone.org/nodes"
+    ],
+    "reporting_interval": {
+      "secs": 10,
+      "nanos": 0
+    }
+  },
+  "network": {
+    "addr": "0.0.0.0:24567",
+    "boot_nodes": "ed25519:12LdKG3RYSCJXuYCaR8vkBQpqjD1JUDnqqVmm2XBpJnG@104.238.221.27:24567,ed25519:6ArjatAC8eVg22tcUHBzdSJGXmSJiFBpHM4fAM1xPzVT@13.215.231.4:24567,ed25519:FzFGCBaZDGin6T41WDxiLf5WRnUjsHSHrXLtnto5FBvH@13.48.176.43:24567,ed25519:FDDPZ6ujJAv7ojQkBWsXLCQQNKkNXz29PejjPNgrQQgr@135.181.116.9:24567,ed25519:Hnsh6tFSrt9tEUvvn1sKyesjCsWcXvSZPKm7jyRP3dxV@141.94.160.175:24567,ed25519:CrviUGEGjUVWhQaHhdzCR18EBXijMRq3bqZk5UskKRTx@141.94.192.133:24567,ed25519:HZfT8ypFWQLb3YT4eyDLGim8mmFyUzxHkbCogmwWX2mE@142.132.192.24:24567,ed25519:Fjgm5ZQ38exaELGrVEc3bbsF3jXbn1Pd3rJpj7KRNZyy@142.132.193.223:24567,ed25519:9MwGJSPgxNM3ABVu5z3nfbYgnnsjcQvfx49g6jbwpWfx@142.132.208.116:24567,ed25519:9EDhpwFYQqhxFwhG9pKceuaG2XRsKubsCXkxSo8zG4XP@142.132.219.113:24567,ed25519:EQQmGHFVAdW9uJykgTHRbqGZLLG17RvoyoQWtodQ7RY2@143.198.16.242:24567,ed25519:4eaJosgKstuY2kr5PPiAVNUdGaNAWgVNnmDaXUURkfd7@144.76.18.158:24567,ed25519:EQBFCgaQgDzXm1SfgfqmsqL6tajZ77qPULsKwUZVCkDv@149.50.101.60:24567,ed25519:5QhdDqiDgqrMyBNvdqcsazs3Fh1ka6vxtuRzfPJ6Qkgp@149.50.105.161:24567,ed25519:DpnqgjFZgPHCPYXPc6wxR84r35DdGqtJKcyPF9wHUx5E@15.235.221.178:24567,ed25519:2DPDjmcbcc5e8nbXWhTHHZzoH8J3V4bgNd5FTuQ4N6En@15.235.224.4:24567,ed25519:7i5HDNyMNSWoZhy5u69hwszzqQTbL9n2ZjMmjJL4jvMt@157.90.88.6:24567,ed25519:Bphc3SG8ZSXA5aaQpWbWT783CJryUVALsjp9uy73rn7L@159.69.58.44:24567,ed25519:FV12hzp4pdKSMysUgsdzu8wakUhAoqWupHUmd1qyV4Ab@162.19.222.225:24567,ed25519:5Wm46qQ36vuCKEAWzsdbFVh3bphNWG9Lqb1wnSzt532j@162.19.97.58:24567,ed25519:8hmTkSTnfZ8D3BLmr2zAXZyxrUnZwhXbp8XwpJPh1eaA@162.55.245.211:24567,ed25519:4sbm6mroEL3XLidtJn1xfWjjY64AzrYEeVmob9F6oZ9t@162.55.82.246:24567,ed25519:HXBDTqcCFGcp6qdn9qpfaHS3veQDACSrwV3a9m7VHRJx@162.55.87.47:24567,ed25519:4gdhQtFnMf7s7cV9Jdg11HXeqRgKteMird4RiPViVaRy@162.55.88.19:24567,ed25519:7Hx27WsRfSePc6n2KMWUF8twmUp9ZXEXa9eED1qc7Bw9@164.152.160.81:24567,ed25519:91ApzAzpBpPfqo9ie3CWLx9SYboq66kfEHhk8kfPQ3b8@167.235.115.67:24567,ed25519:7GRbKBw5B5QfmY5SmGDZjBJ616sGNdWin9T3W7Wc8cT4@167.235.182.238:24567,ed25519:DgoEEZrefAQof8YHHK3tYYo5x8wNzshcW86pGytZhQ6R@167.235.7.126:24567,ed25519:BH8R9XfGu6ivLYQUjAmhddwYPcrUsWuEGZLgBW5bzHMv@172.96.141.233:24567,ed25519:67Y8AUu78qedtdriEUbQnL6cFYbaeenjVP5q8KLdqYdy@175.41.173.84:24567,ed25519:CFKgTQgFS8yJGE8CRfSCDrsuohkcrDRMAySdmcJyr6UM@176.9.92.190:24567,ed25519:F6HF2QjxDW8dw8oqFyMqpt2snh3vrPcM5FZMHgLuqbKS@178.156.132.253:24567,ed25519:FobHrNoJMDu4tJWRdeSE4mdNFC2VM2Y1urMMuaCqBC7m@18.141.168.215:24567,ed25519:D7KgCpnKteYSuFc6vxhT6mSKpqzsxwGh2L3A5HZ3EkPX@18.143.49.208:24567,ed25519:MS6VV3PdJRsVZnPyU9NspSEa6XM39uNML4EpWSfg5YA@18.178.17.86:24567,ed25519:AeQdr6aANyyAg5unkngYpVMicaPH6yMRyiiTmczPkGvQ@185.26.11.183:24567,ed25519:GgVhf32oVyyqKby8v9iyZHPvjDMLgNeTLnYRMBv7G3iR@185.62.81.186:24567,ed25519:HTsLWJ6DdFbRU8Tzrwh5woWNgLGSvfWoKhastfimj1CX@185.8.107.14:24567,ed25519:DXoZxNapth7WfeB2QGh7wonvcwYHZEcGBnM5JLGpZYjR@188.40.62.38:24567,ed25519:4nMrm5ybretw3FpHhpK9LVJVn1qRcnrkdt3oRnzMdEFe@188.40.71.150:24567,ed25519:8g1FaJZRdbtwS4TUqd8iTPg3j3kV7NB5k39qBDBCCmVZ@18.98.128.25:24567,ed25519:4uKzEtSqUobU4dwmxhELj1pHjje9gUaTZhikdbzCYd8u@18.98.129.183:24567,ed25519:ENWQyknDJLCknRU2PofPoDg8F5HvbKZKmb8bA4DPAD3w@193.34.213.193:24567,ed25519:HypXGZx8RY95rPxJ8qCRb2DP9i7pMGcyfHEGnHSwMXAC@195.3.221.47:24567,ed25519:HYdo5j5Bnm2npKtGgBwELgbtYnsYdHhDF3yvHCyBf2UE@200.69.14.232:24567,ed25519:Bnkoj1RzC2KQfXH2PvQyYwf26MmPCSE5iZvXg5J3PiNh@203.117.22.213:24567,ed25519:CJwt4buuxzWurnUbdD3SDmPpwPyRuJFX2ruJYjU4gcon@212.95.39.96:24567,ed25519:28ttM9kdhko79JepdND7K2xWj2szdwvSGZT4d61mhxGo@212.95.45.136:24567,ed25519:7kZmektFYvP9F241WWS43mfrQpV6NaqcA3bRnkwmRhW5@216.144.245.146:24567,ed25519:2vr5Z8tibXpFPA4dpnDC8Np6oUGb9SEP69goqGN9v7iZ@23.227.167.252:24567,ed25519:C6zUsLyY4D2yFSzLUkKwd7as4JbanGwe1J5tqxeLqcVA@23.227.222.185:24567,ed25519:BZGQmFSLSP7moSTP6rmkpb5k1ACxQpSEpw2KsoJV1d1t@23.88.4.221:24567,ed25519:GtX9bfvv6A6KfXAFsgtrm28hVkxaJVFM8knvp3mA1YBw@23.88.70.87:24567,ed25519:9EvB8JFuAjPob539DZFjCSvUaek4FiuYwfM749wxgae9@23.92.65.189:24567,ed25519:iVXHPsrD4F4s1nVBFdf67WeM4NidUniUxM4XVwXsK4c@23.92.65.247:24567,ed25519:6C9LCNq5sRhoaDJABTfm6xENUrqN4iUzUT1THbvcH4Ur@23.92.65.34:24567,ed25519:77TiFXbMJtvnfPgjLkZ6ftNjcxJQLjpoJHqoN8i1eZJK@23.92.65.71:24567,ed25519:C9ae58n8ZrNBsUjvM6zfkbCPab7Vwvf4GxQAcEp5VU6d@34.247.192.5:24567,ed25519:5yozJmRp756MFpwdRkL68y2zYt99Zcc3KHq1Y6bbteXE@34.250.210.97:24567,ed25519:9wDz9SzJnCNEpKP7qPSyDFzD35AzVLBPJhistH5JS5e2@34.7.217.4:24567,ed25519:4CBZNqdWoSXzoAFyisuHpohbhB5trc5bDe621UhRqJy7@3.71.181.92:24567,ed25519:9QXAKYXUKahbRw9JmBEnVmhwf7Bq35GqNeZzg1R8jQAT@37.27.232.41:24567,ed25519:HwNNFvomakQw9fDTfek8HghQQYUsVJFbjJ2j3zfsqkKj@37.27.55.251:24567,ed25519:39jEiB2N3QysYpccELhxcP2kfQAjVXro9uXYdBqABkhH@38.246.35.15:24567,ed25519:CYdvmXrCbyAiSv17RgCRWjDfawnNdc1kSfnvCmoUQnvS@43.134.108.251:24567,ed25519:6YuPjj6hzN3WRHCpjkXy8r6n6esm85xpEnuXPMwqz1aG@47.251.80.49:24567,ed25519:2TeB6YKCbDmGA46Ffm6Wt8m6euDRgj8EYwekTMs39CNR@50.21.167.129:24567,ed25519:DHMScrseuZJTjZoyoYqfbB6ucHEFpZS6r2Wit5D5exeF@5.199.166.5:24567,ed25519:7LtLyrDWVcR1Bo1PvV27TzJLejtQVG4b54zunru3WpCE@54.161.244.197:24567,ed25519:J6MtgWxNwA2K5QU7VpXYA4mhDxYyf3eXj5egZ3jZxyo@54.248.13.68:24567,ed25519:Dm8t7cH7SLo6TKPgG945prKGx4TH868VZA5qWXKQmaZh@57.128.187.1:24567,ed25519:EjBC56UtfiddPYbMMtFvJ8sgXxAEgfEXwjiZhKcFKMh4@64.130.36.200:24567,ed25519:3a5dXcL3iHxb71ygeDFvkTpsEAjAJ6PvCFYLU7bSovzV@64.130.45.84:24567,ed25519:GrXfBSaR7hXXnUetwSWfWr9DGcdhzQU53rNJRypnjzvi@64.31.51.153:24567,ed25519:5xom7GfT1oGSBdA7W9KHshbw81Bih5Fp7nLHiTofD7ak@65.108.122.186:24567,ed25519:8iZx5zdcwMkkNCB65n3ZuJTZEKHYGqszcxAEBDuXmix@65.108.132.28:24567,ed25519:5czCGZgMU9KtaS14XrQG3Z8myBGRZR1t5xB42LiAAt3w@65.108.194.89:24567,ed25519:EKcPNGueATx4QTrpzPfL1FouHH5U1MHZKsstH6eN6uxR@65.108.6.125:24567,ed25519:4UXQupJo9vVLvPAkgW59So93AWtvRYZ9LFDcwfhACzt6@65.109.124.188:24567,ed25519:6Q5QPfPXFx6gkzuF5TjnhcAcRVafnYBkL4T2S7yfJ1Ej@65.109.38.34:24567,ed25519:BKgRXmMYuWXwTzS9izTh1g7NYL5q2A8azywfz9i8eUg9@65.109.69.56:24567,ed25519:BCJySxu5yf827yHFtx4ASr3cQ2cYASrDtSuARe6E9T6J@65.21.79.119:24567,ed25519:5ASMdgQhtcp4TMJ9AZNaG1tHhX4U6aUWVifhTFr6ZtG1@67.213.115.125:24567,ed25519:7HwpBHD3th6bXAUamx958GxDKDU4bWpJ14mTXnSr79bR@74.118.143.106:24567,ed25519:AHa2SRsmcXA7i56knRfEkT8gSGwVsw7ufob55jBer2od@74.50.118.54:24567,ed25519:E4T6RHvThxMmmKpZvjw9Audb3NRMwMNn91xaTC9v85ni@74.50.98.234:24567,ed25519:CTT9UJRrvu41Bdz2wkjhmVytKfBLATGnMRN8e3wzAwi5@79.116.26.63:24567,ed25519:BygnNH2KMmNG6vmWNJruZHB5CrpxVuTp13exrinsF6tG@79.127.196.44:24567,ed25519:F3xSVY1EJGjiTWFdaSN9xsWhdSJLMbr47cr6X9FDyvJQ@80.64.208.22:24567,ed25519:DzfN51ANYvCBjeh4fRbQ7Rgqqv39zckbUwaAwPBLxdDW@8.219.80.233:24567,ed25519:ANzVKk6M2VxZ2YdYaaD8rqjsvyGxPzzDPKvCn6Fy5yLY@84.32.110.211:24567,ed25519:2rTik7S9xTkMNYaaCkD9US4DJgL4Pe931WsFEVgiZb2B@84.32.110.214:24567,ed25519:4gJdQXWQjXnkbN4rE5n9icr4rESLTajXGKiPZLWUsaRb@84.32.186.209:24567,ed25519:7RerazruRYGxYf5Ej8NXiqXh7RLSsqquWp4u5xe4UwaL@84.32.22.78:24567,ed25519:GLmMoH4AhZeVS8QkFvdQLsTn69RD4bRSHuXErVBKuWp6@84.32.231.198:24567,ed25519:4zbkwzs2LMqjG5JmfBpkFd635GHJbprgvrTw8hRzim98@85.195.90.183:24567,ed25519:t9zho7UvTHbhg3kP4ShXxSjYNigBuyBVH6VCCx3Vimj@88.198.46.55:24567,ed25519:4epgutMnZcHD9NKeeAqGXTVuatud7Q7tBWkkpzGqf4rG@88.198.49.137:24567,ed25519:BCMpj48bAuHXRPBaZU3srjN3mnNTLBLimeeUHxpegjGc@88.211.253.196:24567,ed25519:unJgFcwG3Hxqow5mxM6d19An6R4LV8J9zRg3xcPnLHg@88.99.208.59:24567,ed25519:4eWUfJKXPHwao5kqjbzZyJGBBXWjGFCgbJPTFeK591uc@91.134.70.157:24567,ed25519:3dMHefGXq59k7TyBRDMZwENMu3CwE77Lf3igKBdZSv4Z@91.99.38.107:24567,ed25519:FytMCKSqUjDoPVwUgdxCAnnWCeYDWENWdHy9JX1Jputj@94.242.198.84:24567,ed25519:BK7hRtdxLhiPeMvCocRx26Z2YQiPqFbQ76KkuE6meFq6@95.217.198.233:24567",
+    "whitelist_nodes": "",
+    "max_num_peers": 40,
+    "minimum_outbound_peers": 5,
+    "ideal_connections_lo": 30,
+    "ideal_connections_hi": 35,
+    "peer_recent_time_window": {
+      "secs": 600,
+      "nanos": 0
+    },
+    "safe_set_size": 20,
+    "archival_peer_connections_lower_bound": 10,
+    "handshake_timeout": {
+      "secs": 20,
+      "nanos": 0
+    },
+    "skip_sync_wait": false,
+    "ban_window": {
+      "secs": 10800,
+      "nanos": 0
+    },
+    "blacklist": [],
+    "ttl_account_id_router": {
+      "secs": 3600,
+      "nanos": 0
+    },
+    "peer_stats_period": {
+      "secs": 5,
+      "nanos": 0
+    },
+    "monitor_peers_max_period": {
+      "secs": 60,
+      "nanos": 0
+    },
+    "peer_states_cache_size": 1000,
+    "peer_expiration_duration": {
+      "secs": 604800,
+      "nanos": 0
+    },
+    "public_addrs": [],
+    "allow_private_ip_in_public_addrs": false,
+    "trusted_stun_servers": [
+      "stun.l.google.com:19302",
+      "stun1.l.google.com:19302",
+      "stun2.l.google.com:19302",
+      "stun3.l.google.com:19302",
+      "stun4.l.google.com:19302"
+    ],
+    "experimental": {
+      "inbound_disabled": false,
+      "connect_only_to_boot_nodes": false,
+      "skip_sending_tombstones_seconds": 0
+    }
+  },
+  "consensus": {
+    "min_num_peers": 3,
+    "block_production_tracking_delay": {
+      "secs": 0,
+      "nanos": 100000000
+    },
+    "min_block_production_delay": {
+      "secs": 0,
+      "nanos": 600000000
+    },
+    "max_block_production_delay": {
+      "secs": 1,
+      "nanos": 800000000
+    },
+    "max_block_wait_delay": {
+      "secs": 6,
+      "nanos": 0
+    },
+    "produce_empty_blocks": true,
+    "block_fetch_horizon": 50,
+    "block_header_fetch_horizon": 50,
+    "catchup_step_period": {
+      "secs": 0,
+      "nanos": 100000000
+    },
+    "chunk_request_retry_period": {
+      "secs": 0,
+      "nanos": 400000000
+    },
+    "header_sync_initial_timeout": {
+      "secs": 10,
+      "nanos": 0
+    },
+    "header_sync_progress_timeout": {
+      "secs": 2,
+      "nanos": 0
+    },
+    "header_sync_stall_ban_timeout": {
+      "secs": 120,
+      "nanos": 0
+    },
+    "header_sync_expected_height_per_second": 10,
+    "sync_check_period": {
+      "secs": 10,
+      "nanos": 0
+    },
+    "sync_step_period": {
+      "secs": 0,
+      "nanos": 10000000
+    },
+    "doomslug_step_period": {
+      "secs": 0,
+      "nanos": 100000000
+    },
+    "sync_height_threshold": 1,
+    "chunk_wait_mult": [
+      1,
+      3
+    ]
+  },
+  "tracked_shards_config": "NoShards",
+  "log_summary_style": "colored",
+  "log_summary_period": {
+    "secs": 10,
+    "nanos": 0
+  },
+  "enable_multiline_logging": false,
+  "gc_blocks_limit": 2,
+  "gc_fork_clean_step": 100,
+  "gc_num_epochs_to_keep": 3,
+  "view_client_threads": 4,
+  "state_request_throttle_period": {
+    "secs": 30,
+    "nanos": 0
+  },
+  "trie_viewer_state_size_limit": 50000,
+  "store": {
+    "path": null,
+    "enable_statistics": false,
+    "enable_statistics_export": true,
+    "max_open_files": 10000,
+    "col_state_cache_size": 3221225472,
+    "col_flat_state_cache_size": 134217728,
+    "block_size": 16384,
+    "trie_cache": {
+      "default_max_bytes": 500000000,
+      "per_shard_max_bytes": {
+        "s1.v1": 50000000,
+        "s3.v1": 3000000000,
+        "s1.v2": 50000000,
+        "s2.v2": 3000000000,
+        "s4.v2": 3000000000,
+        "s1.v3": 50000000,
+        "s2.v3": 1500000000,
+        "s3.v3": 1500000000,
+        "s5.v3": 3000000000
+      },
+      "shard_cache_deletions_queue_capacity": 100000
+    },
+    "view_trie_cache": {
+      "default_max_bytes": 50000000,
+      "per_shard_max_bytes": {},
+      "shard_cache_deletions_queue_capacity": 100000
+    },
+    "enable_receipt_prefetching": true,
+    "sweat_prefetch_receivers": [
+      "token.sweat",
+      "vfinal.token.sweat.testnet"
+    ],
+    "sweat_prefetch_senders": [
+      "oracle.sweat",
+      "sweat_the_oracle.testnet"
+    ],
+    "claim_sweat_prefetch_config": [
+      {
+        "receiver": "claim.sweat",
+        "sender": "token.sweat",
+        "method_name": "record_batch_for_hold"
+      },
+      {
+        "receiver": "claim.sweat",
+        "sender": "",
+        "method_name": "claim"
+      }
+    ],
+    "load_mem_tries_for_shards": [],
+    "load_mem_tries_for_tracked_shards": true,
+    "state_snapshot_config": {
+      "state_snapshot_type": "Enabled"
+    }
+  },
+  "state_sync_enabled": true,
+  "state_sync": {
+    "sync": {
+      "ExternalStorage": {
+        "location": {
+          "GCS": {
+            "bucket": "state-parts"
+          }
+        },
+        "num_concurrent_requests": 25,
+        "num_concurrent_requests_during_catchup": 5
+      }
+    }
+  },
+  "transaction_pool_size_limit": 100000000,
+  "gc_step_period": {
+    "secs": 0,
+    "nanos": 500000000
+  }
+}

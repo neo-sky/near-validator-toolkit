@@ -1,0 +1,56 @@
+[paths]
+data = /var/lib/grafana
+logs = /var/log/grafana
+plugins = /var/lib/grafana/plugins
+provisioning = /etc/grafana/provisioning
+
+[server]
+protocol = http
+http_addr = ${GRAFANA_BIND_ADDRESS}
+http_port = 3000
+enforce_domain = false
+router_logging = false
+
+[security]
+admin_user = admin
+admin_password = ${GRAFANA_ADMIN_PASSWORD}
+disable_initial_admin_creation = false
+cookie_secure = false
+cookie_samesite = lax
+allow_embedding = false
+strict_transport_security = false
+content_security_policy = true
+disable_gravatar = true
+
+[users]
+allow_sign_up = false
+allow_org_create = false
+auto_assign_org = true
+auto_assign_org_role = Viewer
+default_theme = dark
+viewers_can_edit = false
+editors_can_admin = false
+
+[auth.anonymous]
+enabled = false
+
+[auth.basic]
+enabled = true
+
+[auth]
+disable_login_form = false
+disable_signout_menu = false
+login_maximum_inactive_lifetime_duration = 7d
+login_maximum_lifetime_duration = 30d
+
+[log]
+mode = console file
+level = info
+
+[analytics]
+reporting_enabled = false
+check_for_updates = false
+feedback_links_enabled = false
+
+[snapshots]
+external_enabled = false

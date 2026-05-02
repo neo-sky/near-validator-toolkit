@@ -1,0 +1,10 @@
+/var/log/near-city-nodes/*.log {
+    weekly
+    rotate 12
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+    create 640 neard adm
+}

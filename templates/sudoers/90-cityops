@@ -1,0 +1,8 @@
+${OPERATOR_USER} ALL=(root) NOPASSWD: /bin/systemctl start neard-mainnet
+${OPERATOR_USER} ALL=(root) NOPASSWD: /bin/systemctl stop neard-mainnet
+${OPERATOR_USER} ALL=(root) NOPASSWD: /bin/systemctl restart neard-mainnet
+${OPERATOR_USER} ALL=(root) NOPASSWD: /bin/systemctl reload neard-mainnet
+${OPERATOR_USER} ALL=(root) NOPASSWD: /bin/systemctl status neard-mainnet
+${OPERATOR_USER} ALL=(root) NOPASSWD: /usr/bin/touch /etc/near-city-nodes/pause-upgrades
+${OPERATOR_USER} ALL=(root) NOPASSWD: /bin/rm /etc/near-city-nodes/pause-upgrades
+${OPERATOR_USER} ALL=(root) NOPASSWD: /opt/near-city-nodes/update-near.sh
