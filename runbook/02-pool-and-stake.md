@@ -11,6 +11,31 @@ The pool is deployed by **whoever holds the deployer NEAR account** with funds f
 - Pool owner account (e.g. HoS multisig). The owner controls future `update_staking_key`, `pause_staking`, etc.
 - Funded deployer account with at least 5 NEAR.
 
+## Pre-deploy hard gate
+
+Run these read-only checks from the deployer's signing lane immediately before the deploy. Catches `pool.near` factory upgrades that would break the script's assumptions.
+
+```bash
+# 1. Confirm pool.near min deposit unchanged
+near contract call-function as-read-only pool.near get_min_attached_balance \
+    json-args '{}' network-config mainnet now
+# Expect: "4000000000000000000000000". STOP if different - the script attaches 4 NEAR.
+
+# 2. Confirm pool.near is still shipping the wasm verify-pool.sh expects.
+# Pick any recent pool deploy via pool.near (last 30 days) - browse
+# https://nearblocks.io/address/pool.near?tab=txns for a recent
+# create_staking_pool tx and grab the resulting <name>.pool.near, then:
+curl -s -X POST https://rpc.mainnet.near.org -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_account","finality":"final","account_id":"<recent-pool>.pool.near"}}' \
+  | jq -r '.result.code_hash'
+# Expect: AjD4YJaXgpiRdiArqnzyDi7Bkr1gJms9Z2w7Ev5esTKB
+# (matches verify-pool.sh's reference set: liver/svrn/marcus.pool.near).
+# If different, pool.near has shipped a new wasm and the script's code_hash
+# attestation will need EXPECTED_CODE_HASH=<new-hash> set explicitly.
+```
+
+Both checks are read-only, free, and take under 30 seconds.
+
 ## Pool deploy
 
 Run `scripts/deploy-pool.sh` from the deployer's workstation (NOT the validator box):
