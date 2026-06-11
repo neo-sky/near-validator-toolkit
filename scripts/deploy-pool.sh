@@ -155,11 +155,14 @@ case "$EXISTS" in
     ;;
 esac
 
+CODE_HASH="${CODE_HASH:-AjD4YJaXgpiRdiArqnzyDi7Bkr1gJms9Z2w7Ev5esTKB}"
+
 ARGS_JSON=$(jq -nc \
   --arg id "$POOL_NAME" \
   --arg owner "$OWNER_ID" \
   --arg pk "$STAKE_PUBLIC_KEY" \
-  '{staking_pool_id: $id, owner_id: $owner, stake_public_key: $pk, reward_fee_fraction: {numerator: 1, denominator: 1}}')
+  --arg ch "$CODE_HASH" \
+  '{staking_pool_id: $id, owner_id: $owner, stake_public_key: $pk, reward_fee_fraction: {numerator: 1, denominator: 1}, code_hash: $ch}')
 
 if [ -z "$ARGS_JSON" ] || ! echo "$ARGS_JSON" | jq . >/dev/null 2>&1; then
   echo "ERROR: Failed to build valid JSON args. jq output was empty or malformed." >&2
@@ -176,6 +179,7 @@ cat <<EOF
   Owner           $OWNER_ID
   Stake pubkey    $STAKE_PUBLIC_KEY
   Reward fee      100% (numerator=1, denominator=1)
+  Code hash       $CODE_HASH
   Deployer        $DEPLOYER (pays 4 NEAR storage + gas)
   Sign method     $SIGN_WITH
   Gas             300 Tgas
