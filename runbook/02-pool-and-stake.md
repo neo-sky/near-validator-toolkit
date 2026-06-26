@@ -29,9 +29,9 @@ curl -s -X POST https://rpc.mainnet.near.org -H 'Content-Type: application/json'
   -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_account","finality":"final","account_id":"<recent-pool>.pool.near"}}' \
   | jq -r '.result.code_hash'
 # Expect: AjD4YJaXgpiRdiArqnzyDi7Bkr1gJms9Z2w7Ev5esTKB
-# (matches verify-pool.sh's reference set: liver/svrn/marcus.pool.near).
+# (this is verify-pool.sh's CODE_HASH_DEFAULT).
 # If different, pool.near has shipped a new wasm and the script's code_hash
-# attestation will need EXPECTED_CODE_HASH=<new-hash> set explicitly.
+# check will need EXPECTED_CODE_HASH=<new-hash> set explicitly.
 ```
 
 Both checks are read-only, free, and take under 30 seconds.

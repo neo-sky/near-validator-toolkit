@@ -67,11 +67,11 @@ install -m 644 -o root -g grafana \
     "$REPO_DIR/templates/grafana/provisioning/datasources/prometheus.yaml" \
     /etc/grafana/provisioning/datasources/prometheus.yaml
 install -m 644 -o root -g grafana \
-    "$REPO_DIR/templates/grafana/provisioning/dashboards/legion-fleet.yaml" \
-    /etc/grafana/provisioning/dashboards/legion-fleet.yaml
+    "$REPO_DIR/templates/grafana/provisioning/dashboards/city-node-fleet.yaml" \
+    /etc/grafana/provisioning/dashboards/city-node-fleet.yaml
 install -m 644 -o grafana -g grafana \
-    "$REPO_DIR/grafana/legion-node.json" \
-    /var/lib/grafana/dashboards/legion-node.json
+    "$REPO_DIR/grafana/city-node.json" \
+    /var/lib/grafana/dashboards/city-node.json
 
 log "INFO restart prometheus + node-exporter + grafana"
 systemctl enable --now prometheus prometheus-node-exporter grafana-server

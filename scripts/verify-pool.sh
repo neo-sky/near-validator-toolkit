@@ -27,11 +27,10 @@ Required env:
 Optional env:
   EXPECTED_FEE_NUMERATOR     Default 1.
   EXPECTED_FEE_DENOMINATOR   Default 1.
-  EXPECTED_CODE_HASH         If unset on mainnet, derived at runtime from three
-                             reference pools (liver.pool.near, svrn.pool.near,
-                             marcus.pool.near). On testnet, if unset the
-                             code-hash check is advisory (observed hash is
-                             printed, comparison is skipped).
+  EXPECTED_CODE_HASH         Expected staking-pool wasm hash. On mainnet, defaults
+                             to the canonical pool.near factory hash. On testnet,
+                             if unset the code-hash check is advisory (observed
+                             hash is printed, comparison is skipped).
 
 Strict checks (any fail -> exit 1):
   1. Account exists at POOL_CONTRACT.
@@ -169,46 +168,25 @@ else
   echo "$KEY_RESP" | jq -r '.result.keys[] | "    - \(.public_key)  \(.access_key.permission)"'
 fi
 
-if [ -n "${EXPECTED_CODE_HASH:-}" ]; then
-  if [ "$CODE_HASH" = "$EXPECTED_CODE_HASH" ]; then
-    report PASS "code_hash (user-provided)" "$CODE_HASH"
+# Canonical staking-pool wasm hash shipped by the pool.near factory. Override
+# with EXPECTED_CODE_HASH if the factory ships a new version (see the pre-deploy
+# gate in runbook/02-pool-and-stake.md).
+CODE_HASH_DEFAULT="AjD4YJaXgpiRdiArqnzyDi7Bkr1gJms9Z2w7Ev5esTKB"
+
+EXPECTED_HASH="${EXPECTED_CODE_HASH:-}"
+if [ -z "$EXPECTED_HASH" ] && [ "$NETWORK" = "mainnet" ]; then
+  EXPECTED_HASH="$CODE_HASH_DEFAULT"
+fi
+
+if [ -n "$EXPECTED_HASH" ]; then
+  if [ "$CODE_HASH" = "$EXPECTED_HASH" ]; then
+    report PASS "code_hash" "$CODE_HASH"
   else
-    report FAIL "code_hash (user-provided)" "$CODE_HASH" "$EXPECTED_CODE_HASH"
-  fi
-elif [ "$NETWORK" = "mainnet" ]; then
-  REF_POOLS="liver.pool.near svrn.pool.near marcus.pool.near"
-  REF_HASHES=""
-  REF_FAIL=0
-  for ref in $REF_POOLS; do
-    h=$(view_account "$ref" | jq -r '.result.code_hash // empty')
-    if [ -z "$h" ]; then
-      echo "  warning: reference pool $ref unreachable"
-      REF_FAIL=1
-    else
-      REF_HASHES="$REF_HASHES$h"$'\n'
-    fi
-  done
-  UNIQ_HASHES=$(printf '%s' "$REF_HASHES" | grep -v '^$' | sort -u)
-  REF_COUNT=$(printf '%s\n' "$UNIQ_HASHES" | grep -c . || true)
-  if [ "$REF_FAIL" = "1" ]; then
-    report FAIL "code_hash attestation" "reference pool(s) unreachable" "all 3 references reachable"
-  elif [ "$REF_COUNT" = "1" ] && [ -n "$UNIQ_HASHES" ]; then
-    EXPECTED_DERIVED="$UNIQ_HASHES"
-    if [ "$CODE_HASH" = "$EXPECTED_DERIVED" ]; then
-      report PASS "code_hash (derived)" "$CODE_HASH"
-    else
-      report FAIL "code_hash (derived)" "$CODE_HASH" "$EXPECTED_DERIVED"
-      echo "  Reference pools used: $REF_POOLS"
-    fi
-  else
-    report FAIL "code_hash attestation" "reference pools disagree" "all 3 to match"
-    echo "  Distinct hashes observed:"
-    echo "$UNIQ_HASHES" | sed 's/^/    /'
-    echo "  Investigate factory state or set EXPECTED_CODE_HASH manually."
+    report FAIL "code_hash" "$CODE_HASH" "$EXPECTED_HASH"
   fi
 else
   report INFO "code_hash (testnet, advisory)" "$CODE_HASH"
-  echo "  Set EXPECTED_CODE_HASH env to enable strict comparison on testnet."
+  echo "  Set EXPECTED_CODE_HASH to enable strict comparison on testnet."
 fi
 
 echo

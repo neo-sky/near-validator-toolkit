@@ -79,7 +79,7 @@ For ops leads who want every alert from every node in a single DM stream alongsi
 
 Setup (one-time, deployer side):
 
-1. **Create the fleet bot via @BotFather**: send `/newbot` to @BotFather, name it (e.g. `LegionFleetBot`). Capture the bot token.
+1. **Create the fleet bot via @BotFather**: send `/newbot` to @BotFather, name it (e.g. `FleetBot`). Capture the bot token.
 2. **Hand the bot to the ops lead**: lead sends `/start` to the bot from their personal Telegram. This creates a 1:1 chat the bot can post to.
 3. **Surface the chat_id**: visit `https://api.telegram.org/bot<TOKEN>/getUpdates` after the `/start`. Find the `result[].message.chat.id` field - that's the chat_id (positive integer for DMs, negative for groups).
 4. **Populate per-box `node.env`** on every node in the fleet:

@@ -36,7 +36,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Derived from head lag. Green if caught up (<5s), amber if drifting, red if stalled.",
       "fieldConfig": {
@@ -123,7 +123,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "(near_head_lag_seconds >= 30) * 2 + (near_head_lag_seconds >= 5 and near_head_lag_seconds < 30) * 1",
           "refId": "A"
@@ -135,7 +135,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Number of connected p2p peers. Validators want >= 20 for redundancy.",
       "fieldConfig": {
@@ -191,7 +191,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "sum(near_peer_connections)",
           "refId": "A"
@@ -203,7 +203,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Seconds between wall clock and latest block. Healthy <= 5s.",
       "fieldConfig": {
@@ -259,7 +259,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "near_head_lag_seconds",
           "refId": "A"
@@ -271,7 +271,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Current chain head block processed by this node.",
       "fieldConfig": {
@@ -319,7 +319,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "near_block_height_head",
           "refId": "A"
@@ -331,7 +331,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Current epoch. Mainnet advances roughly every 12 hours.",
       "fieldConfig": {
@@ -379,7 +379,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "near_epoch_height",
           "refId": "A"
@@ -391,7 +391,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Host uptime since last boot.",
       "fieldConfig": {
@@ -439,7 +439,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "time() - node_boot_time_seconds",
           "refId": "A"
@@ -464,7 +464,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Peer connections over time. Chunk validators typically sit at 20-60.",
       "fieldConfig": {
@@ -554,7 +554,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "sum(near_peer_connections)",
           "legendFormat": "peers",
@@ -567,7 +567,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Seconds behind chain head. Line at 30s = stalled threshold.",
       "fieldConfig": {
@@ -655,7 +655,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "near_head_lag_seconds",
           "legendFormat": "head lag",
@@ -668,7 +668,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Rate of block height advancement. Mainnet target is ~1 block/sec.",
       "fieldConfig": {
@@ -749,7 +749,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "rate(near_block_height_head[5m])",
           "legendFormat": "blocks/sec",
@@ -775,7 +775,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Current host CPU utilization across all cores.",
       "fieldConfig": {
@@ -831,7 +831,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
           "refId": "A"
@@ -843,7 +843,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Host memory in use as percentage of total.",
       "fieldConfig": {
@@ -899,7 +899,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
           "refId": "A"
@@ -911,7 +911,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Root filesystem usage. Green < 75%, amber < 90%, red >= 90%.",
       "fieldConfig": {
@@ -967,7 +967,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "100 * (1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"})",
           "refId": "A"
@@ -979,7 +979,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Host CPU, memory, and disk over time on one axis. All percent, 0-100.",
       "fieldConfig": {
@@ -1061,7 +1061,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
           "legendFormat": "cpu %",
@@ -1070,7 +1070,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
           "legendFormat": "memory %",
@@ -1079,7 +1079,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "100 * (1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"})",
           "legendFormat": "disk %",
@@ -1092,7 +1092,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Host 1-minute and 5-minute load averages.",
       "fieldConfig": {
@@ -1173,7 +1173,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "node_load1",
           "legendFormat": "load1",
@@ -1182,7 +1182,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "node_load5",
           "legendFormat": "load5",
@@ -1191,7 +1191,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "node_load15",
           "legendFormat": "load15",
@@ -1217,7 +1217,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Network bytes per second. Rx = inbound, Tx = outbound. P2P traffic dominates.",
       "fieldConfig": {
@@ -1298,7 +1298,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "rate(node_network_receive_bytes_total{device!~\"lo|docker.*|veth.*|br-.*\"}[5m])",
           "legendFormat": "rx {{device}}",
@@ -1307,7 +1307,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "rate(node_network_transmit_bytes_total{device!~\"lo|docker.*|veth.*|br-.*\"}[5m])",
           "legendFormat": "tx {{device}}",
@@ -1320,7 +1320,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "Disk read/write throughput, per NVMe device.",
       "fieldConfig": {
@@ -1401,7 +1401,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "rate(node_disk_read_bytes_total{device=~\"nvme.*\"}[5m])",
           "legendFormat": "read {{device}}",
@@ -1410,7 +1410,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "rate(node_disk_written_bytes_total{device=~\"nvme.*\"}[5m])",
           "legendFormat": "write {{device}}",
@@ -1436,7 +1436,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "CPU usage reported by neard itself (ratio 0-1).",
       "fieldConfig": {
@@ -1517,7 +1517,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "near_cpu_usage_ratio",
           "legendFormat": "neard cpu",
@@ -1530,7 +1530,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "legion-node-prometheus"
+        "uid": "city-node-prometheus"
       },
       "description": "RAM used by neard process.",
       "fieldConfig": {
@@ -1611,7 +1611,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "legion-node-prometheus"
+            "uid": "city-node-prometheus"
           },
           "expr": "near_memory_usage_bytes",
           "legendFormat": "neard memory",
@@ -1625,7 +1625,7 @@
   "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
-    "legion-node",
+    "city-node",
     "validator",
     "near"
   ],
@@ -1637,7 +1637,7 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "legion-node-prometheus"
+          "uid": "city-node-prometheus"
         },
         "query": {
           "qryType": 1,
@@ -1662,7 +1662,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "$node - Overview",
-  "uid": "legion-node-overview",
+  "uid": "city-node-overview",
   "version": 2,
   "weekStart": ""
 }

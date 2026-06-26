@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: bash syntax check
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            bash -n "$f" || fail=1
+          done < <(git ls-files '*.sh')
+          exit $fail
+
+      - name: shellcheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: warning
+          additional_files: 'templates/ufw/rules.sh'
+
+      - name: validate yaml
+        run: |
+          python3 - <<'PY'
+          import glob, sys, yaml
+          bad = 0
+          for f in glob.glob('**/*.yaml', recursive=True) + glob.glob('**/*.yml', recursive=True):
+              try:
+                  list(yaml.safe_load_all(open(f)))
+              except Exception as e:
+                  print(f"{f}: {e}")
+                  bad = 1
+          sys.exit(bad)
+          PY
+
+      - name: validate json
+        run: |
+          python3 - <<'PY'
+          import glob, json, sys
+          bad = 0
+          for f in glob.glob('**/*.json', recursive=True):
+              try:
+                  json.load(open(f))
+              except Exception as e:
+                  print(f"{f}: {e}")
+                  bad = 1
+          sys.exit(bad)
+          PY
