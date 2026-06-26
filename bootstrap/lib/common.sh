@@ -4,6 +4,7 @@
 
 set -Eeuo pipefail
 
+# shellcheck disable=SC2034  # consumed by the phase scripts that source this file
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 STATE_DIR="${STATE_DIR:-/var/lib/near-city-nodes/bootstrap-state}"
 LOG_FILE="${LOG_FILE:-/var/log/near-city-nodes/bootstrap.log}"
