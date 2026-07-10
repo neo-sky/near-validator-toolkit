@@ -33,6 +33,9 @@ STABILIZATION_WAIT="${STABILIZATION_WAIT:-90}"
 PAUSE_FILE="${PAUSE_FILE:-/etc/near-city-nodes/pause-upgrades}"
 AUDIT_LOG="${AUDIT_LOG:-/var/log/near-city-nodes/update.log}"
 KEEP_IMAGES="${KEEP_IMAGES:-3}"
+STAGED_FILE="${STAGED_FILE:-/var/lib/near-city-nodes/staged-upgrade}"
+NEAR_DATA_DIR="${NEAR_DATA_DIR:-/var/lib/neard/.near/data}"
+SNAPSHOT_DIR="${SNAPSHOT_DIR:-/var/lib/neard/.near/data.pre-upgrade-snapshot}"
 
 START_TIME=$SECONDS
 mkdir -p "$(dirname "$AUDIT_LOG")" "$(dirname "$VERSION_FILE")"
@@ -172,6 +175,103 @@ prune_old_images() {
     echo "$removed"
 }
 
+apply_rollback() {
+    local prev="$1" staged="$2" migrated="$3"
+    trap - ERR
+    set +e
+    systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+    if (( migrated )); then
+        log "APPLY ROLLBACK post-migration: restore snapshot + $prev"
+        send_telegram "\`[ROLLBACK]\` \`${staged}\` failed after migration. Restoring DB snapshot + \`${prev}\`."
+        if [[ -d "$SNAPSHOT_DIR" ]]; then
+            rm -rf "$NEAR_DATA_DIR"
+            mv "$SNAPSHOT_DIR" "$NEAR_DATA_DIR"
+        else
+            send_telegram "\`[ROLLBACK]\` WARNING snapshot missing at \`${SNAPSHOT_DIR}\`; DB left as-is, manual recovery needed."
+        fi
+    else
+        log "APPLY ROLLBACK pre-migration: data intact, restart $prev"
+        send_telegram "\`[ROLLBACK]\` \`${staged}\` apply failed before migration; data intact. Restarting \`${prev}\`."
+        rm -rf "$SNAPSHOT_DIR" 2>/dev/null || true
+    fi
+    docker tag "${IMAGE_NAME}:${prev}" "${IMAGE_NAME}:current" 2>/dev/null || true
+    set_current_version "$prev"
+    systemctl start "$SERVICE_NAME" 2>/dev/null || true
+    send_telegram "\`[ROLLBACK]\` Restored \`${prev}\`. Investigate before re-staging."
+    exit 1
+}
+
+apply_staged() {
+    [[ -f "$STAGED_FILE" ]] || { log "APPLY no staged upgrade at $STAGED_FILE"; exit 1; }
+    local staged prev
+    staged=$(cat "$STAGED_FILE")
+    prev=$(get_current_version)
+
+    if ! docker image inspect "${IMAGE_NAME}:${staged}" >/dev/null 2>&1; then
+        log "APPLY staged image ${IMAGE_NAME}:${staged} missing"
+        send_telegram "\`[FAIL]\` Staged image \`${staged}\` not present. Re-stage before applying."
+        exit 1
+    fi
+
+    local progress
+    progress=$(check_epoch_progress) || {
+        send_telegram "\`[ABORT]\` apply-staged: could not read epoch state."
+        exit 1
+    }
+    if (( progress > MAX_EPOCH_PROGRESS )); then
+        log "APPLY postpone epoch ${progress}% > ${MAX_EPOCH_PROGRESS}%"
+        send_telegram "\`[POSTPONE]\` apply-staged: epoch ${progress}% exceeds ${MAX_EPOCH_PROGRESS}%. Re-run after next epoch."
+        exit 0
+    fi
+
+    local migrated=0
+    trap 'apply_rollback "$prev" "$staged" "$migrated"' ERR
+
+    send_telegram "\`[APPLY]\` Staged \`${prev}\` -> \`${staged}\` (DB migration). Epoch ${progress}%. Stopping, snapshotting, migrating."
+    log "APPLY stop $SERVICE_NAME"
+    systemctl stop "$SERVICE_NAME"
+
+    log "APPLY snapshot $NEAR_DATA_DIR -> $SNAPSHOT_DIR"
+    rm -rf "$SNAPSHOT_DIR"
+    cp -al "$NEAR_DATA_DIR" "$SNAPSHOT_DIR"
+
+    log "APPLY retag ${IMAGE_NAME}:${staged} -> :current"
+    docker tag "${IMAGE_NAME}:${staged}" "${IMAGE_NAME}:current"
+    set_current_version "$staged"
+
+    log "APPLY start $SERVICE_NAME"
+    systemctl start "$SERVICE_NAME"
+    migrated=1
+
+    local up=0 i
+    for i in $(seq 1 60); do
+        curl -s --max-time 3 "$LOCAL_STATUS_URL" >/dev/null 2>&1 && { up=1; break; }
+        sleep 5
+    done
+    sleep "$STABILIZATION_WAIT"
+
+    local running peers
+    running=$(curl -s --max-time 10 "$LOCAL_STATUS_URL" | jq -r '.version.version' 2>/dev/null || echo "")
+    peers=$(health_check_peers || echo 0); peers="${peers:-0}"
+
+    if (( up == 1 )) && systemctl is-active --quiet "$SERVICE_NAME" \
+        && [[ "$running" == "$staged" ]] && (( peers >= MIN_PEER_COUNT )); then
+        trap - ERR
+        log "APPLY OK version=$running peers=$peers"
+        send_telegram "\`[OK]\` Applied \`${staged}\`, peers ${peers}, epoch ${progress}%. Snapshot kept at \`${SNAPSHOT_DIR}\` (remove after a stable day)."
+        rm -f "$STAGED_FILE"
+        exit 0
+    fi
+
+    log "APPLY unhealthy up=$up version=$running peers=$peers"
+    apply_rollback "$prev" "$staged" "$migrated"
+}
+
+if [[ "${1:-}" == "apply-staged" ]]; then
+    log "START apply-staged"
+    apply_staged
+fi
+
 log "START update check"
 
 if [[ -f "$PAUSE_FILE" ]]; then
@@ -200,9 +300,23 @@ IS_DATABASE=$(is_database_upgrade "$RELEASE_BODY")
 log "INFO release flags security=$IS_SECURITY database=$IS_DATABASE"
 
 if [[ "$IS_DATABASE" == "true" ]]; then
-    log "DATABASE_UPGRADE detected, halting auto-updater"
-    send_telegram "\`[ATTENTION]\` Release \`$LATEST\` requires database migration \
-(\`DATABASE_UPGRADE: TRUE\`). Auto-updater is NOT proceeding. Manual review required."
+    log "DATABASE_UPGRADE detected for $LATEST; staging (not auto-applying)"
+    if docker image inspect "${IMAGE_NAME}:${LATEST}" >/dev/null 2>&1; then
+        log "INFO image ${IMAGE_NAME}:${LATEST} already built"
+    else
+        send_telegram "\`[BUILD]\` DB-migration release \`${LATEST}\`: pre-building image (~15-20min)..."
+        if ! docker build --build-arg "NEARCORE_TAG=$LATEST" \
+             -t "${IMAGE_NAME}:${LATEST}" "$DOCKER_BUILD_CONTEXT"; then
+            log "FAIL pre-build for $LATEST"
+            send_telegram "\`[FAIL]\` Pre-build failed for \`${LATEST}\`. Nothing staged."
+            exit 1
+        fi
+    fi
+    echo "$LATEST" > "$STAGED_FILE"
+    log "STAGED $LATEST at $STAGED_FILE"
+    send_telegram "\`[ATTENTION]\` \`${LATEST}\` needs a DB migration + manual review. Image is built and staged. \
+Read the release notes for config-breaking changes, then apply with: \
+\`sudo /opt/near-city-nodes/update-near.sh apply-staged\`"
     exit 0
 fi
 

@@ -55,6 +55,28 @@ docker images nearcore --format '{{.Tag}}\t{{.CreatedSince}}'
 
 `KEEP_IMAGES` in `node.env` (default 3) governs how far back rollback can go.
 
+## Database-migration releases (staged upgrades)
+
+Routine releases are applied automatically. A release flagged `DATABASE_UPGRADE: TRUE` is **not** auto-applied, because a database migration is irreversible for the old binary (once neard migrates the on-disk format, the previous image can no longer open it) and such releases sometimes carry config-breaking changes that no machine-readable flag signals. The most recent example: 2.13 stopped accepting `state_sync.sync: ExternalStorage` and exits on startup if it is set. No flag announces that; it is only in the release-notes prose. So a human reads the notes before applying.
+
+When the updater sees a DB-migration release it does the slow, safe part for you: it pre-builds the image, records the version at `STAGED_FILE`, and Telegrams:
+
+> `[ATTENTION]` `<version>` needs a DB migration + manual review. Image is built and staged. Read the release notes ..., then apply with: `sudo /opt/near-city-nodes/update-near.sh apply-staged`
+
+To apply after reviewing the release notes (in particular, check `config.json` for any field the release drops):
+
+```bash
+sudo /opt/near-city-nodes/update-near.sh apply-staged
+```
+
+`apply-staged` runs the guarded sequence: epoch-safe check, stop neard, hardlink-snapshot the data dir (`SNAPSHOT_DIR`, near-instant), retag and start on the new version (neard migrates the DB on boot), then verify the running version and peer count. If the new version comes up unhealthy it **restores the DB snapshot and the previous image** and restarts, then alerts. On success the snapshot is kept at `SNAPSHOT_DIR`; remove it after a stable day:
+
+```bash
+sudo rm -rf /var/lib/neard/.near/data.pre-upgrade-snapshot
+```
+
+The epoch-safety gate applies here exactly as it does to routine upgrades; `apply-staged` postpones itself if the node is past `MAX_EPOCH_PROGRESS`.
+
 ## Telegram smoke test
 
 `update-near.sh` only fires Telegram on real upgrade activity (build, restart, fail, postpone). To exercise both bot wirings without waiting for a release, hit each endpoint directly from root:
