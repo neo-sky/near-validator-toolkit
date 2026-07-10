@@ -244,7 +244,7 @@ apply_staged() {
     migrated=1
 
     local up=0 i
-    for i in $(seq 1 60); do
+    for (( i = 0; i < 60; i++ )); do
         curl -s --max-time 3 "$LOCAL_STATUS_URL" >/dev/null 2>&1 && { up=1; break; }
         sleep 5
     done
