@@ -10,6 +10,8 @@ log "INFO install $SERVICE_NAME unit"
 install -m 644 -o root -g root \
     "$REPO_DIR/systemd/${SERVICE_NAME}.service" \
     "/etc/systemd/system/${SERVICE_NAME}.service"
+sed -i "s#__NEARD_UID__:__NEARD_GID__#$(id -u neard):$(id -g neard)#" \
+    "/etc/systemd/system/${SERVICE_NAME}.service"
 
 log "INFO copy update-near.sh to /opt/near-city-nodes/"
 if [ "$(realpath -m "$REPO_DIR/update-near.sh")" != "$(realpath -m /opt/near-city-nodes/update-near.sh)" ]; then

@@ -8,12 +8,12 @@ require_var OPERATOR_USER
 
 OPERATOR_PUBKEYS_FILE="${OPERATOR_SSH_PUBKEYS_FILE:-/etc/near-city-nodes/operator_authorized_keys}"
 
-log "INFO neard system user (uid 998)"
+log "INFO neard system user"
 if ! getent group neard >/dev/null; then
-    groupadd --system --gid 998 neard
+    groupadd --system neard
 fi
 if ! getent passwd neard >/dev/null; then
-    useradd --system --uid 998 --gid 998 \
+    useradd --system --gid neard \
         --home-dir /var/lib/neard --no-create-home \
         --shell /usr/sbin/nologin neard
 fi

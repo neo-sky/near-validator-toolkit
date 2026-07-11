@@ -7,8 +7,11 @@ phase_done && exit 0
 [[ "$EUID" -eq 0 ]] || die "must run as root"
 
 . /etc/os-release
-[[ "$ID" == "ubuntu" && "$VERSION_ID" == "22.04" ]] \
-    || die "OS check: expected Ubuntu 22.04, got $PRETTY_NAME"
+[[ "$ID" == "ubuntu" ]] || die "OS check: expected Ubuntu, got $PRETTY_NAME"
+case "$VERSION_ID" in
+    22.04|24.04|26.04) ;;
+    *) die "OS check: expected Ubuntu 22.04, 24.04, or 26.04, got $PRETTY_NAME" ;;
+esac
 
 [[ -f "$ENV_FILE" ]] || die "env file missing: $ENV_FILE"
 load_env
@@ -27,11 +30,10 @@ done
 [[ "$NETWORK" =~ ^(mainnet|testnet)$ ]] \
     || die "NETWORK must be mainnet or testnet: got '$NETWORK'"
 
-required_ram_gb=60
-required_disk_gb=200
+required_ram_gb=6
+required_disk_gb=60
 if [[ "$NETWORK" == "testnet" ]]; then
-    required_ram_gb=8
-    required_disk_gb=80
+    required_disk_gb=40
 fi
 
 ram_kb=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)

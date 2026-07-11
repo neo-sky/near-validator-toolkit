@@ -17,7 +17,7 @@ else
     log "INFO running neard init (downloads genesis manifest, generates keys)"
     docker run --rm \
         -v "$NEAR_HOME:/home/neard/.near" \
-        -u 998:998 \
+        -u "$(id -u neard):$(id -g neard)" \
         --entrypoint /usr/local/bin/neard \
         "${IMAGE_NAME}:current" \
         --home /home/neard/.near init \

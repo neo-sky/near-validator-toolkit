@@ -6,6 +6,11 @@ phase_done && exit 0
 
 export DEBIAN_FRONTEND=noninteractive
 
+log "INFO apt lock timeout (unattended-upgrades may hold dpkg on first boot)"
+install -d -m 755 -o root -g root /etc/apt/apt.conf.d
+printf 'DPkg::Lock::Timeout "600";\n' > /etc/apt/apt.conf.d/99-lock-timeout
+chmod 644 /etc/apt/apt.conf.d/99-lock-timeout
+
 log "INFO apt update"
 retry 3 10 apt-get update -y -q
 

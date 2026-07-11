@@ -15,12 +15,12 @@ ExecStart=/usr/bin/docker run \
   --name neard-mainnet \
   --rm \
   --network host \
-  --user 998:998 \
+  --user __NEARD_UID__:__NEARD_GID__ \
   --cap-drop=ALL \
   --security-opt=no-new-privileges:true \
   --read-only \
   --tmpfs /tmp:size=256m \
-  --memory=48g \
+  --memory=6g \
   --pids-limit=4096 \
   -v /var/lib/neard/.near:/home/neard/.near \
   -v /var/log/near-city-nodes:/var/log/near-city-nodes \
