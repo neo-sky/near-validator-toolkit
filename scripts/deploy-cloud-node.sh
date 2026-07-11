@@ -4,16 +4,20 @@
 #   NODE_BOT_TOKEN=<token> deploy-cloud-node.sh <ssh-host> <operator-name> <public-ipv4> <chat-id>
 #
 # The Telegram bot token is read from NODE_BOT_TOKEN so it never lands in argv.
-# REF_HOST supplies the fleet Telegram credentials and the nearcore image; it must
-# already be deployed. FORCE=1 permits redeploying a host that carries a pool account.
+# REF_HOST is an already-deployed host that supplies the fleet Telegram credentials
+# and the nearcore image. OPERATOR_PUBKEY is the public key installed for the
+# operator user. FORCE=1 permits redeploying a host that carries a pool account.
 #
-# Env: REF_HOST (default cloud-3), IMAGE_TAG, OPERATOR_PUBKEY, TRANSFER_TIMEOUT, FORCE
+# Required env: NODE_BOT_TOKEN, REF_HOST, OPERATOR_PUBKEY
+# Optional env: IMAGE_TAG, NETWORK, OPERATOR_USER, TRANSFER_TIMEOUT, FORCE
 
 set -euo pipefail
 
-REF_HOST="${REF_HOST:-cloud-3}"
+REF_HOST="${REF_HOST:-}"
+OPERATOR_PUBKEY="${OPERATOR_PUBKEY:-}"
 IMAGE_TAG="${IMAGE_TAG:-2.13.0}"
-OPERATOR_PUBKEY="${OPERATOR_PUBKEY:-$HOME/.ssh/citynode_fleet.pub}"
+NETWORK="${NETWORK:-mainnet}"
+OPERATOR_USER="${OPERATOR_USER:-validator}"
 TRANSFER_TIMEOUT="${TRANSFER_TIMEOUT:-900}"
 FORCE="${FORCE:-0}"
 
@@ -38,6 +42,10 @@ TELEGRAM_BOT_TOKEN="${NODE_BOT_TOKEN:-}"
 
 step "validate inputs"
 [[ -n "$TELEGRAM_BOT_TOKEN" ]] || die "NODE_BOT_TOKEN is unset; pass the bot token by env, not argv"
+[[ -n "$REF_HOST" ]] || die "REF_HOST is unset; name an already-deployed host to source the image from"
+[[ -n "$OPERATOR_PUBKEY" ]] || die "OPERATOR_PUBKEY is unset; name the public key to install for $OPERATOR_USER"
+[[ "$NETWORK" =~ ^(mainnet|testnet)$ ]] || die "NETWORK must be mainnet or testnet: got '$NETWORK'"
+[[ "$OPERATOR_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || die "operator user must be a valid unix name: got '$OPERATOR_USER'"
 [[ "$OPERATOR_NAME" =~ ^[a-z][a-z0-9-]+$ ]] || die "operator name must be kebab-case: got '$OPERATOR_NAME'"
 [[ "$TELEGRAM_CHAT_ID" =~ ^-?[0-9]+$ ]] || die "chat id must be numeric: got '$TELEGRAM_CHAT_ID'"
 [[ "$NODE_PUBLIC_IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || die "public ip must be IPv4: got '$NODE_PUBLIC_IP'"
@@ -74,17 +82,17 @@ remote "$TARGET" 'install -d -m 700 -o root -g root /etc/near-city-nodes'
 {
     cat <<ENV
 OPERATOR_NAME=$OPERATOR_NAME
-OPERATOR_USER=validator
+OPERATOR_USER=$OPERATOR_USER
 OPERATOR_SSH_PUBKEYS_FILE=/etc/near-city-nodes/operator_authorized_keys
 NODE_PUBLIC_IP=$NODE_PUBLIC_IP
-NETWORK=mainnet
+NETWORK=$NETWORK
 NEARCORE_TAG=$IMAGE_TAG
 EPOCH_LENGTH=43200
-NEAR_RPC_URL=https://rpc.mainnet.near.org
+NEAR_RPC_URL=https://rpc.$NETWORK.near.org
 POOL_ACCOUNT=
 TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
 TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID
-SERVICE_NAME=neard-mainnet
+SERVICE_NAME=neard-$NETWORK
 IMAGE_NAME=nearcore
 DOCKER_BUILD_CONTEXT=/opt/nearcore-docker
 LOCAL_STATUS_URL=http://localhost:3030/status
@@ -103,7 +111,7 @@ GRAFANA_ADMIN_PASSWORD=
 GRAFANA_BIND_ADDRESS=0.0.0.0
 ENV
     printf '%s\n' "$fleet_creds"
-} | remote "$TARGET" "install -m 600 -o root -g root /dev/stdin '$ENV_FILE'"
+} | remote "$TARGET" "cat > '$ENV_FILE' && chown root:root '$ENV_FILE' && chmod 600 '$ENV_FILE'"
 
 scp -q "$OPERATOR_PUBKEY" "$TARGET:/tmp/operator_authorized_keys"
 remote "$TARGET" 'install -m 644 -o root -g root /tmp/operator_authorized_keys \
@@ -130,19 +138,19 @@ step "bootstrap phases 05-11"
 remote "$TARGET" 'cd /opt/near-city-nodes && ./bootstrap.sh --from 05-neard-build'
 
 step "verify $TARGET"
-remote "$TARGET" '
+remote "$TARGET" "
 rc=0
-for unit in neard-mainnet prometheus prometheus-node-exporter grafana-server fail2ban; do
-    state=$(systemctl is-active "$unit" || true)
-    printf "  %-26s %s\n" "$unit" "$state"
-    [ "$state" = active ] || rc=1
+for unit in neard-$NETWORK prometheus prometheus-node-exporter grafana-server fail2ban; do
+    state=\$(systemctl is-active \"\$unit\" || true)
+    printf '  %-26s %s\n' \"\$unit\" \"\$state\"
+    [ \"\$state\" = active ] || rc=1
 done
-printf "  %-26s %s\n" neard \
-    "$(curl -sf --max-time 10 http://localhost:3030/status | jq -c "{version:.version.version,syncing:.sync_info.syncing}")"
-printf "  %-26s %s\n" grafana \
-    "$(curl -sf --max-time 10 --retry 5 --retry-delay 2 http://localhost:3000/api/health | jq -c "{database,version}")"
-printf "  %-26s %s\n" disk "$(df -h / | awk "NR==2 {print \$4 \" free of \" \$2}")"
-journalctl -u neard-mainnet --no-pager | grep -oE "node_status=\"[^\"]*\"" | tail -1 | sed "s/^/  sync  /"
-exit "$rc"'
+printf '  %-26s %s\n' neard \
+    \"\$(curl -sf --max-time 10 http://localhost:3030/status | jq -c '{version:.version.version,syncing:.sync_info.syncing}')\"
+printf '  %-26s %s\n' grafana \
+    \"\$(curl -sf --max-time 10 --retry 5 --retry-delay 2 http://localhost:3000/api/health | jq -c '{database,version}')\"
+printf '  %-26s %s\n' disk \"\$(df -h / | awk 'NR==2 {print \$4 \" free of \" \$2}')\"
+journalctl -u neard-$NETWORK --no-pager | grep -oE 'node_status=\"[^\"]*\"' | tail -1 | sed 's/^/  sync  /'
+exit \$rc"
 
 printf '\n== %s deployed\n' "$TARGET"
