@@ -20,7 +20,7 @@ ExecStart=/usr/bin/docker run \
   --security-opt=no-new-privileges:true \
   --read-only \
   --tmpfs /tmp:size=256m \
-  --memory=6g \
+  --memory=__NEARD_MEM__ \
   --pids-limit=4096 \
   -v /var/lib/neard/.near:/home/neard/.near \
   -v /var/log/near-city-nodes:/var/log/near-city-nodes \

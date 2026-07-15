@@ -11,7 +11,10 @@ ufw default deny routed
 
 ufw allow 22/tcp comment 'SSH'
 ufw allow 24567/tcp comment 'NEAR p2p'
-ufw allow 3000/tcp comment 'Grafana'
+
+if [[ "${GRAFANA_BIND_ADDRESS:-127.0.0.1}" == "0.0.0.0" ]]; then
+    ufw allow 3000/tcp comment 'Grafana'
+fi
 
 ufw --force enable
 ufw status verbose

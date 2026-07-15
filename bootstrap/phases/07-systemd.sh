@@ -13,6 +13,10 @@ install -m 644 -o root -g root \
 sed -i "s#__NEARD_UID__:__NEARD_GID__#$(id -u neard):$(id -g neard)#" \
     "/etc/systemd/system/${SERVICE_NAME}.service"
 
+mem_mb=$(awk '/^MemTotal:/ {printf "%d", $2 / 1024 * 85 / 100}' /proc/meminfo)
+sed -i "s#__NEARD_MEM__#${mem_mb}m#" \
+    "/etc/systemd/system/${SERVICE_NAME}.service"
+
 log "INFO copy update-near.sh to /opt/near-city-nodes/"
 if [ "$(realpath -m "$REPO_DIR/update-near.sh")" != "$(realpath -m /opt/near-city-nodes/update-near.sh)" ]; then
     install -m 755 -o root -g root \

@@ -2,7 +2,7 @@
 #
 # Deploys a NEAR staking pool via the staking pool factory.
 # 100% reward_fee_fraction, intended for a sponsored-stake program where all
-# rewards route back to the pool owner (HoS multisig).
+# rewards route back to the pool owner.
 #
 # Post-deploy: run verify-pool.sh, then lock-pool.sh.
 
@@ -25,8 +25,8 @@ Required env:
                     Format: 2-40 chars, lowercase a-z, 0-9, hyphens/underscores,
                     no leading or trailing hyphen.
   OWNER_ID          Account that will own the pool. Can rotate the stake key,
-                    adjust fees, pause staking, vote. Typically a HoS multisig
-                    for sponsored-stake programs.
+                    adjust fees, pause staking, vote. Typically a multisig for
+                    sponsored-stake programs.
   STAKE_PUBLIC_KEY  Validator public key, format: ed25519:<base58>.
                     Must equal the public_key in /var/lib/neard/.near/validator_key.json
                     on the validator node. Mismatch = silent failure to sign.
@@ -42,6 +42,8 @@ Optional env:
                       sign-later                  (produces unsigned tx for multisig)
                       sign-with-access-key-file
                       sign-with-legacy-keychain
+  CODE_HASH         Factory code_hash for the pool wasm to deploy. Defaults to
+                    the canonical pool.near staking-pool contract hash.
 
 Factory targets:
   mainnet -> pool.near (upgradeable)
@@ -52,7 +54,8 @@ Deploy call:
     staking_pool_id:     POOL_NAME,
     owner_id:            OWNER_ID,
     stake_public_key:    STAKE_PUBLIC_KEY,
-    reward_fee_fraction: {numerator: 1, denominator: 1}
+    reward_fee_fraction: {numerator: 1, denominator: 1},
+    code_hash:           CODE_HASH
   })
 
 Gas: 300 Tgas. Attached: 4 NEAR (factory storage deposit).

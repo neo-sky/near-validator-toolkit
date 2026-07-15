@@ -3,6 +3,7 @@
 source "$(dirname "$0")/../lib/common.sh"
 
 phase_done && exit 0
+load_env
 
 log "INFO install sshd hardening drop-in"
 install -m 644 -o root -g root \

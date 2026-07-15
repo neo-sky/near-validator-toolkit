@@ -11,7 +11,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
     | sh -s -- -y --default-toolchain 1.86.0 --profile minimal
 ENV PATH="/root/.cargo/bin:${PATH}"
 WORKDIR /build
-ARG NEARCORE_TAG=2.11.0
+ARG NEARCORE_TAG=2.13.1
 RUN git clone --depth 1 --branch ${NEARCORE_TAG} https://github.com/near/nearcore.git .
 RUN make release
 
