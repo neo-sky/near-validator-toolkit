@@ -1,0 +1,67 @@
+name: publish-image
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: nearcore release tag to build (blank = latest release)
+        required: false
+  schedule:
+    - cron: '17 6 * * *'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve tag and image
+        id: meta
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          tag="$INPUT_TAG"
+          if [ -z "$tag" ]; then
+            tag=$(curl -fsSL https://api.github.com/repos/near/nearcore/releases/latest | jq -r .tag_name)
+          fi
+          [ -n "$tag" ] && [ "$tag" != null ] || { echo "could not resolve a tag" >&2; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "image=${REGISTRY}/${OWNER,,}/nearcore" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip if already published
+        id: check
+        env:
+          REF: ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
+        run: |
+          if docker manifest inspect "$REF" >/dev/null 2>&1; then
+            echo "already published: $REF"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.check.outputs.exists == 'false'
+        uses: actions/checkout@v4
+
+      - name: Build and push
+        if: steps.check.outputs.exists == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: NEARCORE_TAG=${{ steps.meta.outputs.tag }}
+          tags: ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
+          push: true

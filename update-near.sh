@@ -33,6 +33,8 @@ STABILIZATION_WAIT="${STABILIZATION_WAIT:-90}"
 PAUSE_FILE="${PAUSE_FILE:-/etc/near-city-nodes/pause-upgrades}"
 AUDIT_LOG="${AUDIT_LOG:-/var/log/near-city-nodes/update.log}"
 KEEP_IMAGES="${KEEP_IMAGES:-3}"
+BUILD_MODE="${BUILD_MODE:-build}"
+IMAGE_REGISTRY="${IMAGE_REGISTRY:-}"
 STAGED_FILE="${STAGED_FILE:-/var/lib/near-city-nodes/staged-upgrade}"
 NEAR_DATA_DIR="${NEAR_DATA_DIR:-/var/lib/neard/.near/data}"
 SNAPSHOT_DIR="${SNAPSHOT_DIR:-/var/lib/neard/.near/data.pre-upgrade-snapshot}"
@@ -49,7 +51,7 @@ TELEGRAM_DESTS=()
 log() {
     local line
     line="$(date -u +%Y-%m-%dT%H:%M:%SZ) [$OPERATOR_NAME] $*"
-    echo "$line"
+    echo "$line" >&2
     printf '%s\n' "$line" >> "$AUDIT_LOG"
 }
 
@@ -134,8 +136,8 @@ check_epoch_progress() {
 }
 
 health_check_peers() {
-    curl -s --max-time 10 "$LOCAL_METRICS_URL" 2>/dev/null \
-        | grep '^near_peer_connections{' \
+    { curl -s --max-time 10 "$LOCAL_METRICS_URL" 2>/dev/null || true; } \
+        | { grep '^near_peer_connections{' || true; } \
         | awk '{sum += $2} END {print sum+0}'
 }
 
@@ -173,6 +175,59 @@ prune_old_images() {
                 | sort -V -r \
                 | tail -n +$((keep + 1)))
     echo "$removed"
+}
+
+BUILD_MIN=0
+acquire_image() {
+    local tag="$1"
+    local ref="${IMAGE_NAME}:${tag}"
+    BUILD_MIN=0
+    if docker image inspect "$ref" >/dev/null 2>&1; then
+        log "INFO image $ref already present"
+        send_telegram "\`[CACHED]\` Image \`${ref}\` already present."
+        return 0
+    fi
+    case "$BUILD_MODE" in
+        build)
+            send_telegram "\`[BUILD]\` Building \`${ref}\` from $DOCKER_BUILD_CONTEXT (~15-20min)..."
+            local start=$SECONDS
+            if ! docker build --build-arg "NEARCORE_TAG=$tag" -t "$ref" "$DOCKER_BUILD_CONTEXT"; then
+                log "FAIL docker build for $tag"
+                send_telegram "\`[FAIL]\` docker build failed for \`${tag}\`. No changes applied."
+                return 1
+            fi
+            BUILD_MIN=$(( (SECONDS - start) / 60 ))
+            log "OK build complete for $tag in ${BUILD_MIN}min"
+            ;;
+        pull)
+            [[ -n "$IMAGE_REGISTRY" ]] || {
+                log "FATAL BUILD_MODE=pull but IMAGE_REGISTRY is unset"
+                send_telegram "\`[FAIL]\` BUILD_MODE=pull but IMAGE_REGISTRY is empty. Set it in node.env."
+                return 1
+            }
+            local src="${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}"
+            send_telegram "\`[PULL]\` Fetching \`${src}\`..."
+            if ! docker pull "$src"; then
+                log "FAIL docker pull $src"
+                send_telegram "\`[FAIL]\` Could not pull \`${src}\`. No changes applied."
+                return 1
+            fi
+            docker tag "$src" "$ref"
+            log "OK pulled $tag from $src"
+            ;;
+        stage)
+            log "NEEDS-IMAGE $tag absent and BUILD_MODE=stage (host does not build)"
+            send_telegram "\`[NEEDS IMAGE]\` \`${tag}\` is not present and this host does not build \
+(BUILD_MODE=stage). Deliver it with \`push-image-to-fleet.sh ${tag}\`; it applies on the next run."
+            return 1
+            ;;
+        *)
+            log "FATAL unknown BUILD_MODE=$BUILD_MODE"
+            send_telegram "\`[FAIL]\` Invalid BUILD_MODE \`${BUILD_MODE}\` (expected build, pull, or stage)."
+            return 1
+            ;;
+    esac
+    return 0
 }
 
 apply_rollback() {
@@ -301,17 +356,7 @@ log "INFO release flags security=$IS_SECURITY database=$IS_DATABASE"
 
 if [[ "$IS_DATABASE" == "true" ]]; then
     log "DATABASE_UPGRADE detected for $LATEST; staging (not auto-applying)"
-    if docker image inspect "${IMAGE_NAME}:${LATEST}" >/dev/null 2>&1; then
-        log "INFO image ${IMAGE_NAME}:${LATEST} already built"
-    else
-        send_telegram "\`[BUILD]\` DB-migration release \`${LATEST}\`: pre-building image (~15-20min)..."
-        if ! docker build --build-arg "NEARCORE_TAG=$LATEST" \
-             -t "${IMAGE_NAME}:${LATEST}" "$DOCKER_BUILD_CONTEXT"; then
-            log "FAIL pre-build for $LATEST"
-            send_telegram "\`[FAIL]\` Pre-build failed for \`${LATEST}\`. Nothing staged."
-            exit 1
-        fi
-    fi
+    acquire_image "$LATEST" || exit 1
     echo "$LATEST" > "$STAGED_FILE"
     log "STAGED $LATEST at $STAGED_FILE"
     send_telegram "\`[ATTENTION]\` \`${LATEST}\` needs a DB migration + manual review. Image is built and staged. \
@@ -341,23 +386,7 @@ ${MAX_EPOCH_PROGRESS}%. Will retry after next epoch."
     exit 0
 fi
 
-if docker image inspect "${IMAGE_NAME}:${LATEST}" >/dev/null 2>&1; then
-    log "INFO image ${IMAGE_NAME}:${LATEST} already exists, skipping build"
-    send_telegram "\`[CACHED]\` Image \`${IMAGE_NAME}:${LATEST}\` already built. Skipping rebuild."
-    BUILD_MIN=0
-else
-    send_telegram "\`[BUILD]\` Building \`${IMAGE_NAME}:${LATEST}\` from $DOCKER_BUILD_CONTEXT (~15-20min)..."
-    BUILD_START=$SECONDS
-    if ! docker build --build-arg "NEARCORE_TAG=$LATEST" \
-         -t "${IMAGE_NAME}:${LATEST}" \
-         "$DOCKER_BUILD_CONTEXT"; then
-        log "FAIL docker build for $LATEST"
-        send_telegram "\`[FAIL]\` docker build failed for \`${LATEST}\`. No changes applied."
-        exit 1
-    fi
-    BUILD_MIN=$(( (SECONDS - BUILD_START) / 60 ))
-    log "OK build complete in ${BUILD_MIN}min"
-fi
+acquire_image "$LATEST" || exit 1
 
 PROGRESS=$(check_epoch_progress) || {
     send_telegram "\`[ABORT]\` Could not re-check epoch. Image \`${LATEST}\` built but not applied."
@@ -414,7 +443,12 @@ log "CLEANUP pruned $PRUNED images"
 
 elapsed=$(( SECONDS - START_TIME ))
 printf -v elapsed_fmt "%02d:%02d:%02d" $(( elapsed / 3600 )) $(( (elapsed % 3600) / 60 )) $(( elapsed % 60 ))
-log "DONE total=${elapsed_fmt} build=${BUILD_MIN}min"
-send_telegram "\`[DONE]\` Total ${elapsed_fmt}, build ${BUILD_MIN}min."
+if [[ "$BUILD_MODE" == "build" ]]; then
+    log "DONE total=${elapsed_fmt} build=${BUILD_MIN}min"
+    send_telegram "\`[DONE]\` Total ${elapsed_fmt}, build ${BUILD_MIN}min."
+else
+    log "DONE total=${elapsed_fmt}"
+    send_telegram "\`[DONE]\` Total ${elapsed_fmt}."
+fi
 
 exit 0

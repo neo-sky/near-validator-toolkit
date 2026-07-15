@@ -59,7 +59,7 @@ docker images nearcore --format '{{.Tag}}\t{{.CreatedSince}}'
 
 Routine releases are applied automatically. A release flagged `DATABASE_UPGRADE: TRUE` is **not** auto-applied, because a database migration is irreversible for the old binary (once neard migrates the on-disk format, the previous image can no longer open it) and such releases sometimes carry config-breaking changes that no machine-readable flag signals. The most recent example: 2.13 stopped accepting `state_sync.sync: ExternalStorage` and exits on startup if it is set. No flag announces that; it is only in the release-notes prose. So a human reads the notes before applying.
 
-When the updater sees a DB-migration release it does the slow, safe part for you: it pre-builds the image, records the version at `STAGED_FILE`, and Telegrams:
+When the updater sees a DB-migration release it does the slow, safe part for you: it obtains the image (building or pulling it per `BUILD_MODE`), records the version at `STAGED_FILE`, and Telegrams:
 
 > `[ATTENTION]` `<version>` needs a DB migration + manual review. Image is built and staged. Read the release notes ..., then apply with: `sudo /opt/near-city-nodes/update-near.sh apply-staged`
 

@@ -1,6 +1,6 @@
 # 01 - Deploy a validator node
 
-End-to-end deploy of a new node from a fresh Hetzner box to a synced (but unstaked) validator. Total wall time ~30-40 min, dominated by the nearcore docker build (~15-20 min) and the genesis download (~3 GB / 3-5 min).
+End-to-end deploy of a new node from a fresh Hetzner box to a synced (but unstaked) validator. In `build` mode wall time is ~30-40 min, dominated by the nearcore compile (~15-20 min); in `pull` mode the image is fetched in seconds and the genesis download (~3 GB / 3-5 min) dominates instead. This walkthrough is the manual `build`-mode deploy on bare metal; for `pull`-mode hosts, `scripts/deploy-cloud-node.sh` runs the same sequence in one command.
 
 ## Operator prep (before the deploy window)
 
@@ -19,7 +19,7 @@ End-to-end deploy of a new node from a fresh Hetzner box to a synced (but unstak
 
 ### 1. Order Hetzner
 
-Order an AX41-NVMe (or equivalent >=64 GB RAM, 2x NVMe RAID1) with **Ubuntu 22.04 LTS**. Hetzner's installimage handles RAID1; pick the default. Note the public IPv4 address and the `root` SSH key.
+Order an AX41-NVMe (or equivalent >=64 GB RAM, 2x NVMe RAID1) with **Ubuntu 22.04, 24.04, or 26.04 LTS**. The 64 GB bar is a `build`-mode requirement for compiling neard; a `pull`-mode host only needs the runtime footprint (see the gates in `bootstrap/phases/00-preflight.sh`). Hetzner's installimage handles RAID1; pick the default. Note the public IPv4 address and the `root` SSH key.
 
 ### 2. Prepare `node.env` locally
 
@@ -123,9 +123,9 @@ Send the validator pubkey from step 6 to whoever runs `scripts/deploy-pool.sh`, 
 
 ## Common failure modes
 
-- **Phase 00 fails on RAM check**: `RAM Xg < required 60g` - wrong server. Re-order at Hetzner.
+- **Phase 00 fails on RAM check**: the host is below the preflight floor for its `NETWORK` and `BUILD_MODE` (see `00-preflight.sh`; a `build` host needs the RAM to compile neard). Re-order or resize.
 - **Phase 04 fails on docker daemon**: kernel cgroups misconfigured. `systemctl status docker` and Hetzner's serial console are your friends.
-- **Phase 05 hangs at `make release`**: the cargo build is real CPU work for ~15-20 min on AX41. Not a hang; check `top` / `docker stats`.
+- **Phase 05 slow at `make release`** (build mode): the cargo build is real CPU work for ~15-20 min on AX41. Not a hang; check `top` / `docker stats`. In `pull` mode phase 05 fetches a prebuilt image instead and returns in seconds.
 - **Phase 06 fails downloading genesis**: usually transient; re-run the phase. If persistent, check outbound firewall - needs `s3.amazonaws.com:443`.
 - **Phase 07 starts neard but `is-active` fails**: `journalctl -u neard-mainnet -n 50`. Check `/var/lib/neard/.near/config.json` is well-formed (`jq . config.json`). Re-run phase 06 with `--force` to regenerate.
 - **Phase 09 starts grafana but Telegram smoke test fails**: contact-points YAML rendered with wrong tokens. Inspect `/etc/grafana/provisioning/alerting/contact-points-primary.yaml` (and `contact-points-fleet.yaml` if fleet vars set). Edit `node.env`, re-run `./bootstrap.sh --phase 09-alerting --force`.

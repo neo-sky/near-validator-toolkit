@@ -1,24 +1,23 @@
 #!/bin/bash
 # Deploy one NEAR validator node onto a provisioned Ubuntu host.
 # Usage:
-#   NODE_BOT_TOKEN=<token> deploy-cloud-node.sh <ssh-host> <operator-name> <public-ipv4> <chat-id>
+#   NODE_BOT_TOKEN=<token> IMAGE_REGISTRY=ghcr.io/<org> OPERATOR_PUBKEY=<path> \
+#     deploy-cloud-node.sh <ssh-host> <operator-name> <public-ipv4> <chat-id>
 #
-# The Telegram bot token is read from NODE_BOT_TOKEN so it never lands in argv.
-# REF_HOST is an already-deployed host that supplies the fleet Telegram credentials
-# and the nearcore image. OPERATOR_PUBKEY is the public key installed for the
-# operator user. FORCE=1 permits redeploying a host that carries a pool account.
+# The host pulls its prebuilt neard image from IMAGE_REGISTRY and never compiles.
+# The bot token is read from NODE_BOT_TOKEN so it never lands in argv. FORCE=1
+# permits redeploying a host that already carries a pool account.
 #
-# Required env: NODE_BOT_TOKEN, REF_HOST, OPERATOR_PUBKEY
-# Optional env: IMAGE_TAG, NETWORK, OPERATOR_USER, TRANSFER_TIMEOUT, FORCE
+# Required env: NODE_BOT_TOKEN, IMAGE_REGISTRY, OPERATOR_PUBKEY
+# Optional env: FLEET_BOT_TOKEN, FLEET_CHAT_ID, IMAGE_TAG, NETWORK, OPERATOR_USER, FORCE
 
 set -euo pipefail
 
-REF_HOST="${REF_HOST:-}"
+IMAGE_REGISTRY="${IMAGE_REGISTRY:-}"
 OPERATOR_PUBKEY="${OPERATOR_PUBKEY:-}"
-IMAGE_TAG="${IMAGE_TAG:-2.13.0}"
+IMAGE_TAG="${IMAGE_TAG:-}"
 NETWORK="${NETWORK:-mainnet}"
 OPERATOR_USER="${OPERATOR_USER:-validator}"
-TRANSFER_TIMEOUT="${TRANSFER_TIMEOUT:-900}"
 FORCE="${FORCE:-0}"
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -42,36 +41,33 @@ TELEGRAM_BOT_TOKEN="${NODE_BOT_TOKEN:-}"
 
 step "validate inputs"
 [[ -n "$TELEGRAM_BOT_TOKEN" ]] || die "NODE_BOT_TOKEN is unset; pass the bot token by env, not argv"
-[[ -n "$REF_HOST" ]] || die "REF_HOST is unset; name an already-deployed host to source the image from"
+[[ -n "$IMAGE_REGISTRY" ]] || die "IMAGE_REGISTRY is unset; e.g. ghcr.io/<org>"
 [[ -n "$OPERATOR_PUBKEY" ]] || die "OPERATOR_PUBKEY is unset; name the public key to install for $OPERATOR_USER"
+[[ -f "$OPERATOR_PUBKEY" ]] || die "operator public key not found: $OPERATOR_PUBKEY"
 [[ "$NETWORK" =~ ^(mainnet|testnet)$ ]] || die "NETWORK must be mainnet or testnet: got '$NETWORK'"
 [[ "$OPERATOR_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || die "operator user must be a valid unix name: got '$OPERATOR_USER'"
 [[ "$OPERATOR_NAME" =~ ^[a-z][a-z0-9-]+$ ]] || die "operator name must be kebab-case: got '$OPERATOR_NAME'"
 [[ "$TELEGRAM_CHAT_ID" =~ ^-?[0-9]+$ ]] || die "chat id must be numeric: got '$TELEGRAM_CHAT_ID'"
 [[ "$NODE_PUBLIC_IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || die "public ip must be IPv4: got '$NODE_PUBLIC_IP'"
 for octet in ${NODE_PUBLIC_IP//./ }; do
-    (( octet <= 255 )) || die "public ip octet out of range: '$NODE_PUBLIC_IP'"
+    (( 10#$octet <= 255 )) || die "public ip octet out of range: '$NODE_PUBLIC_IP'"
 done
-[[ -f "$OPERATOR_PUBKEY" ]] || die "operator public key not found: $OPERATOR_PUBKEY"
-[[ "$TARGET" != "$REF_HOST" ]] || die "target host and REF_HOST must differ"
-printf '  target=%s operator=%s ip=%s ref=%s tag=%s\n' \
-    "$TARGET" "$OPERATOR_NAME" "$NODE_PUBLIC_IP" "$REF_HOST" "$IMAGE_TAG"
 
-step "check hosts"
+if [[ -z "$IMAGE_TAG" ]]; then
+    IMAGE_TAG=$(curl -fsSL https://api.github.com/repos/near/nearcore/releases/latest | jq -r .tag_name | sed 's/^v//')
+    [[ -n "$IMAGE_TAG" && "$IMAGE_TAG" != null ]] || die "could not resolve latest nearcore release; set IMAGE_TAG"
+fi
+printf '  target=%s operator=%s ip=%s registry=%s tag=%s\n' \
+    "$TARGET" "$OPERATOR_NAME" "$NODE_PUBLIC_IP" "$IMAGE_REGISTRY" "$IMAGE_TAG"
+
+step "check host"
 remote "$TARGET" true || die "cannot ssh to $TARGET"
-remote "$REF_HOST" "docker image inspect nearcore:${IMAGE_TAG} >/dev/null 2>&1" \
-    || die "$REF_HOST does not hold nearcore:${IMAGE_TAG}"
 
 step "refuse to clobber a staked validator"
 pool=$(remote "$TARGET" "sed -n 's/^POOL_ACCOUNT=//p' '$ENV_FILE' 2>/dev/null || true")
 [[ -z "$pool" || "$FORCE" == "1" ]] \
     || die "$TARGET already carries POOL_ACCOUNT=$pool; set FORCE=1 to redeploy anyway"
 printf '  no pool account on target\n'
-
-step "read fleet telegram credentials from $REF_HOST"
-fleet_creds=$(remote "$REF_HOST" "grep -E '^TELEGRAM_FLEET_(BOT_TOKEN|CHAT_ID)=' '$ENV_FILE'")
-[[ $(grep -c '=' <<<"$fleet_creds") -eq 2 ]] || die "fleet telegram credentials incomplete on $REF_HOST"
-printf '  fleet credentials loaded\n'
 
 step "sync repository to $TARGET"
 rsync -az --exclude='.git' --exclude='nearcore/' --exclude='*.log' \
@@ -92,8 +88,12 @@ NEAR_RPC_URL=https://rpc.$NETWORK.near.org
 POOL_ACCOUNT=
 TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
 TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID
+TELEGRAM_FLEET_BOT_TOKEN=${FLEET_BOT_TOKEN:-}
+TELEGRAM_FLEET_CHAT_ID=${FLEET_CHAT_ID:-}
 SERVICE_NAME=neard-$NETWORK
 IMAGE_NAME=nearcore
+IMAGE_REGISTRY=$IMAGE_REGISTRY
+BUILD_MODE=pull
 DOCKER_BUILD_CONTEXT=/opt/nearcore-docker
 LOCAL_STATUS_URL=http://localhost:3030/status
 LOCAL_METRICS_URL=http://localhost:3030/metrics
@@ -110,7 +110,6 @@ SNAPSHOT_DIR=/var/lib/neard/.near/data.pre-upgrade-snapshot
 GRAFANA_ADMIN_PASSWORD=
 GRAFANA_BIND_ADDRESS=0.0.0.0
 ENV
-    printf '%s\n' "$fleet_creds"
 } | remote "$TARGET" "cat > '$ENV_FILE' && chown root:root '$ENV_FILE' && chmod 600 '$ENV_FILE'"
 
 scp -q "$OPERATOR_PUBKEY" "$TARGET:/tmp/operator_authorized_keys"
@@ -118,24 +117,8 @@ remote "$TARGET" 'install -m 644 -o root -g root /tmp/operator_authorized_keys \
     /etc/near-city-nodes/operator_authorized_keys && rm -f /tmp/operator_authorized_keys'
 printf '  node.env installed (0600), operator key in place\n'
 
-step "bootstrap phases 00-04"
-remote "$TARGET" 'cd /opt/near-city-nodes && ./bootstrap.sh --to 04-docker'
-
-step "provision nearcore:${IMAGE_TAG}"
-if remote "$TARGET" "docker image inspect nearcore:${IMAGE_TAG} >/dev/null 2>&1"; then
-    printf '  image already present on target\n'
-else
-    printf '  streaming from %s, timeout %ss\n' "$REF_HOST" "$TRANSFER_TIMEOUT"
-    timeout "$TRANSFER_TIMEOUT" bash -c "
-        ssh -o BatchMode=yes -C '$REF_HOST' 'docker save nearcore:${IMAGE_TAG}' \
-        | ssh -o BatchMode=yes -C '$TARGET' 'docker load'" \
-        || die "image transfer from $REF_HOST stalled or failed"
-    remote "$TARGET" "docker image inspect nearcore:${IMAGE_TAG} >/dev/null 2>&1" \
-        || die "image transfer completed but nearcore:${IMAGE_TAG} is not present on $TARGET"
-fi
-
-step "bootstrap phases 05-11"
-remote "$TARGET" 'cd /opt/near-city-nodes && ./bootstrap.sh --from 05-neard-build'
+step "bootstrap"
+remote "$TARGET" 'cd /opt/near-city-nodes && ./bootstrap.sh'
 
 step "verify $TARGET"
 remote "$TARGET" "
