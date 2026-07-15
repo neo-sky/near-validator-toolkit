@@ -48,7 +48,7 @@ ssh root@<NODE_PUBLIC_IP> 'install -d -m 700 /etc/near-city-nodes'
 
 ```bash
 ssh root@<NODE_PUBLIC_IP> '
-  git clone https://github.com/<org>/near-city-nodes.git /opt/near-city-nodes &&
+  git clone https://github.com/<org>/near-validator-toolkit.git /opt/near-city-nodes &&
   cd /opt/near-city-nodes
 '
 ```

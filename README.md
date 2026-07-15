@@ -1,4 +1,4 @@
-# near-city-nodes
+# near-validator-toolkit
 
 A phased bootstrap toolkit for deploying and operating NEAR Protocol validator nodes. One command turns a fresh Ubuntu host into a hardened, monitored, auto-updating mainnet validator.
 
@@ -55,7 +55,7 @@ scp operator.pub  root@<host>:/etc/near-city-nodes/operator_authorized_keys
 
 # Clone and run on the host
 ssh root@<host> '
-  git clone https://github.com/<org>/near-city-nodes.git /opt/near-city-nodes &&
+  git clone https://github.com/<org>/near-validator-toolkit.git /opt/near-city-nodes &&
   cd /opt/near-city-nodes &&
   ./bootstrap.sh
 '
@@ -106,4 +106,4 @@ State markers live outside the repo at `/var/lib/near-city-nodes/bootstrap-state
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE).
+MIT License. See [LICENSE](LICENSE).
