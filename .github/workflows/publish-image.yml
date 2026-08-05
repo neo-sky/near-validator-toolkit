@@ -7,7 +7,7 @@ on:
         description: nearcore release tag to build (blank = latest release)
         required: false
   schedule:
-    - cron: '17 6 * * *'
+    - cron: '17 */3 * * *'
 
 permissions:
   contents: read
