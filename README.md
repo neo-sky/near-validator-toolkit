@@ -86,7 +86,8 @@ systemd/                  Validator service unit
 templates/                Config templates rendered per host (ssh, ufw, fail2ban,
                           sysctl, prometheus, grafana, cron, logrotate, ...)
 grafana/                  Per-validator dashboard (uses a $node template variable)
-scripts/                  Node deploy + operator-side pool deploy / verify / lock
+scripts/                  Node deploy, fleet staged-upgrade rollout, operator-side
+                          pool deploy / verify / lock
 runbook/                  Numbered operator + deployer guide
 .env.example              Canonical per-host configuration template
 ```

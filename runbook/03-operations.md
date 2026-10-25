@@ -77,6 +77,8 @@ sudo rm -rf /var/lib/neard/.near/data.pre-upgrade-snapshot
 
 The epoch-safety gate applies here exactly as it does to routine upgrades; `apply-staged` postpones itself if the node is past `MAX_EPOCH_PROGRESS`.
 
+To roll a staged release across several hosts from a workstation, `scripts/apply-staged-fleet.sh cloud-1 cloud-2 ...` runs `apply-staged` on each host in turn and only moves to the next once the host reports the staged version. A failure, an unreachable host, or an epoch postponement stops the rollout where it is; re-run with the remaining hosts once the cause is clear or the next epoch has started. `SETTLE_SECONDS` (default 120) is the pause between hosts. Validators should still be rolled with care: a live validator that is down for the migration misses endorsements for that window, so prefer early-epoch windows and do not run two fleets at once.
+
 ## Telegram smoke test
 
 `update-near.sh` only fires Telegram on real upgrade activity (build, restart, fail, postpone). To exercise both bot wirings without waiting for a release, hit each endpoint directly from root:
