@@ -25,10 +25,12 @@ jobs:
         env:
           INPUT_TAG: ${{ inputs.tag }}
           OWNER: ${{ github.repository_owner }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           tag="$INPUT_TAG"
           if [ -z "$tag" ]; then
-            tag=$(curl -fsSL https://api.github.com/repos/near/nearcore/releases/latest | jq -r .tag_name)
+            tag=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+              https://api.github.com/repos/near/nearcore/releases/latest | jq -r .tag_name)
           fi
           [ -n "$tag" ] && [ "$tag" != null ] || { echo "could not resolve a tag" >&2; exit 1; }
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
