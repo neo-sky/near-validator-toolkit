@@ -1,8 +1,9 @@
 #!/bin/bash
 #
 # Deploys a NEAR staking pool via the staking pool factory.
-# 100% reward_fee_fraction, intended for a sponsored-stake program where all
-# rewards route back to the pool owner.
+# Defaults to a 100% reward_fee_fraction for the sponsored-stake program where
+# all rewards route back to the pool owner. Set REWARD_FEE_NUMERATOR and
+# REWARD_FEE_DENOMINATOR for a delegated pool where the operator takes a cut.
 #
 # Post-deploy: run verify-pool.sh, then lock-pool.sh.
 
@@ -16,6 +17,8 @@ Usage:
   STAKE_PUBLIC_KEY=ed25519:<base58> \
   DEPLOYER=<account-id>             \
   NETWORK=mainnet|testnet           \
+  [REWARD_FEE_NUMERATOR=1]          \
+  [REWARD_FEE_DENOMINATOR=1]        \
   [DRY_RUN=1]                       \
   [SIGN_WITH=sign-with-keychain]    \
   ./deploy-pool.sh
@@ -35,6 +38,12 @@ Required env:
   NETWORK           mainnet or testnet. No default; must be set explicitly.
 
 Optional env:
+  REWARD_FEE_NUMERATOR
+  REWARD_FEE_DENOMINATOR
+                    Operator fee as a fraction of rewards. Defaults to 1/1
+                    (100%, sponsored-stake). A delegated pool paying the
+                    operator 10% is 1/10. The owner can change this later
+                    with update_reward_fee_fraction.
   DRY_RUN           If "1", prints the planned call and exits without sending.
   SIGN_WITH         near-cli-rs signer method. Defaults to sign-with-keychain.
                     Useful overrides:
@@ -54,7 +63,7 @@ Deploy call:
     staking_pool_id:     POOL_NAME,
     owner_id:            OWNER_ID,
     stake_public_key:    STAKE_PUBLIC_KEY,
-    reward_fee_fraction: {numerator: 1, denominator: 1},
+    reward_fee_fraction: {numerator: REWARD_FEE_NUMERATOR, denominator: REWARD_FEE_DENOMINATOR},
     code_hash:           CODE_HASH
   })
 
@@ -72,6 +81,8 @@ fi
 : "${STAKE_PUBLIC_KEY:?STAKE_PUBLIC_KEY must be set. See --help.}"
 : "${DEPLOYER:?DEPLOYER must be set. See --help.}"
 : "${NETWORK:?NETWORK must be set (mainnet or testnet). See --help.}"
+REWARD_FEE_NUMERATOR="${REWARD_FEE_NUMERATOR:-1}"
+REWARD_FEE_DENOMINATOR="${REWARD_FEE_DENOMINATOR:-1}"
 DRY_RUN="${DRY_RUN:-0}"
 SIGN_WITH="${SIGN_WITH:-sign-with-keychain}"
 
@@ -87,6 +98,13 @@ if ! [[ "$STAKE_PUBLIC_KEY" =~ ^ed25519:[1-9A-HJ-NP-Za-km-z]{43,44}$ ]]; then
   echo "ERROR: STAKE_PUBLIC_KEY must match ed25519:<base58> (43-44 char base58 suffix)." >&2
   exit 1
 fi
+
+if ! [[ "$REWARD_FEE_NUMERATOR" =~ ^[0-9]+$ && "$REWARD_FEE_DENOMINATOR" =~ ^[1-9][0-9]*$ ]] \
+   || [ "$REWARD_FEE_NUMERATOR" -gt "$REWARD_FEE_DENOMINATOR" ]; then
+  echo "ERROR: REWARD_FEE_NUMERATOR/REWARD_FEE_DENOMINATOR must be integers with 0 <= numerator <= denominator and denominator > 0." >&2
+  exit 1
+fi
+FEE_PERCENT=$(awk -v n="$REWARD_FEE_NUMERATOR" -v d="$REWARD_FEE_DENOMINATOR" 'BEGIN { printf "%.2f", n * 100 / d }')
 
 case "$NETWORK" in
   mainnet)
@@ -165,7 +183,9 @@ ARGS_JSON=$(jq -nc \
   --arg owner "$OWNER_ID" \
   --arg pk "$STAKE_PUBLIC_KEY" \
   --arg ch "$CODE_HASH" \
-  '{staking_pool_id: $id, owner_id: $owner, stake_public_key: $pk, reward_fee_fraction: {numerator: 1, denominator: 1}, code_hash: $ch}')
+  --argjson num "$REWARD_FEE_NUMERATOR" \
+  --argjson den "$REWARD_FEE_DENOMINATOR" \
+  '{staking_pool_id: $id, owner_id: $owner, stake_public_key: $pk, reward_fee_fraction: {numerator: $num, denominator: $den}, code_hash: $ch}')
 
 if [ -z "$ARGS_JSON" ] || ! echo "$ARGS_JSON" | jq . >/dev/null 2>&1; then
   echo "ERROR: Failed to build valid JSON args. jq output was empty or malformed." >&2
@@ -181,7 +201,7 @@ cat <<EOF
   Pool contract   $POOL_CONTRACT
   Owner           $OWNER_ID
   Stake pubkey    $STAKE_PUBLIC_KEY
-  Reward fee      100% (numerator=1, denominator=1)
+  Reward fee      ${FEE_PERCENT}% (numerator=$REWARD_FEE_NUMERATOR, denominator=$REWARD_FEE_DENOMINATOR)
   Code hash       $CODE_HASH
   Deployer        $DEPLOYER (pays 4 NEAR storage + gas)
   Sign method     $SIGN_WITH
@@ -230,6 +250,8 @@ cat <<EOF
     POOL_CONTRACT=$POOL_CONTRACT \\
     EXPECTED_OWNER=$OWNER_ID \\
     EXPECTED_STAKE_PUBLIC_KEY=$STAKE_PUBLIC_KEY \\
+    EXPECTED_FEE_NUMERATOR=$REWARD_FEE_NUMERATOR \\
+    EXPECTED_FEE_DENOMINATOR=$REWARD_FEE_DENOMINATOR \\
     NETWORK=$NETWORK \\
     ./verify-pool.sh
 
@@ -238,5 +260,4 @@ cat <<EOF
     POOL_CONTRACT=$POOL_CONTRACT \\
     NETWORK=$NETWORK \\
     ./lock-pool.sh
-
 EOF
