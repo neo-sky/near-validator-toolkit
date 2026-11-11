@@ -61,9 +61,21 @@ jobs:
 
       - name: Build and push
         if: steps.check.outputs.exists == 'false'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          build-args: NEARCORE_TAG=${{ steps.meta.outputs.tag }}
-          tags: ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
-          push: true
+        env:
+          REF: ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
+          NEARCORE_TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          attempt=1
+          until docker build --build-arg "NEARCORE_TAG=$NEARCORE_TAG" -t "$REF" .; do
+            [ "$attempt" -lt 3 ] || { echo "build failed after $attempt attempts" >&2; exit 1; }
+            echo "build attempt $attempt failed, retrying in 60s" >&2
+            attempt=$((attempt + 1))
+            sleep 60
+          done
+          attempt=1
+          until docker push "$REF"; do
+            [ "$attempt" -lt 3 ] || { echo "push failed after $attempt attempts" >&2; exit 1; }
+            echo "push attempt $attempt failed, retrying in 30s" >&2
+            attempt=$((attempt + 1))
+            sleep 30
+          done
