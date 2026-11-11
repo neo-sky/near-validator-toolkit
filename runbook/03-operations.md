@@ -8,7 +8,7 @@ For the operator (`OPERATOR_USER` on the box). All commands use the limited sudo
 sudo touch /etc/near-city-nodes/pause-upgrades
 ```
 
-The next cron tick (02:00, 10:00, 18:00 UTC) will log `PAUSED` and exit. To resume:
+The next cron tick (every two hours at :30 UTC) will log `PAUSED` and exit. To resume:
 
 ```bash
 sudo rm /etc/near-city-nodes/pause-upgrades
